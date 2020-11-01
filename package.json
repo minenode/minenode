@@ -20,7 +20,7 @@
   "scripts": {
     "start": "node --experimental-wasm-bigint dist/app.js",
     "lint": "eslint --fix --ext ts src",
-    "test": "echo \"Running test...\" && eslint --ext ts src && tsc --noEmit"
+    "test": "eslint --ext ts src && tsc --noEmit"
   },
   "pre-commit": {
     "run": [
