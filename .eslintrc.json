@@ -11,10 +11,11 @@
   "rules": {
     "@typescript-eslint/no-floating-promises": "error",
     "require-await": "error",
-    "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-non-null-assertion": "off",
-    "no-case-declarations": "off"
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "@typescript-eslint/explicit-member-accessibility": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "warn"
   },
   "parserOptions": {
     "project": "tsconfig.json"
