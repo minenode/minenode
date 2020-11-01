@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@minenode/wasm-java-random": "^0.0.3",
+    "eventemitter3": "^4.0.7",
     "long": "^4.0.0",
     "uuid": "^8.3.1"
   },

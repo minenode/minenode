@@ -31,12 +31,30 @@ export default class MineBuffer {
   public writeOffset = 0;
   public readOffset = 0;
 
+  protected _lastReadVarIntLength = 0;
+  protected _lastReadVarLongLength = 0;
+
   public constructor(buffer?: Uint8Array) {
     if (typeof buffer === "undefined") {
       this.buffer = Buffer.alloc(ALLOC_SIZE);
     } else {
       this.buffer = Buffer.from(buffer);
+      this.writeOffset = buffer.length;
     }
+  }
+
+  /**
+   * The length, in bytes, of the last read VarInt.
+   */
+  public get lastReadVarIntLength(): number {
+    return this._lastReadVarIntLength;
+  }
+
+  /**
+   * The length, in bytes, of the last read VarLong.
+   */
+  public get lastReadVarLongLength(): number {
+    return this._lastReadVarLongLength;
   }
 
   /**
@@ -44,6 +62,13 @@ export default class MineBuffer {
    */
   public getBuffer(): Buffer {
     return this.buffer.slice(0, this.writeOffset);
+  }
+
+  /**
+   * The number of bytes remaining that can be read.
+   */
+  public get remaining(): number {
+    return this.writeOffset - this.readOffset;
   }
 
   /**
@@ -150,6 +175,7 @@ export default class MineBuffer {
       numRead++;
       if (numRead > 5) throw new Error("VarInt is too big");
     } while ((read & 0b10000000) != 0);
+    this._lastReadVarIntLength = numRead;
     return result;
   }
 
@@ -169,6 +195,7 @@ export default class MineBuffer {
       numRead++;
       if (numRead > 10) throw new Error("VarLong is too big");
     } while ((read & 0b10000000) != 0);
+    this._lastReadVarLongLength = numRead;
     return result;
   }
 
