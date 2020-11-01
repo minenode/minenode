@@ -15,4 +15,4 @@ test: configure
 	$(TSC) --noEmit
 
 clean:
-	rm -rfv ./dist/*
+	rm -rf ./dist/*
