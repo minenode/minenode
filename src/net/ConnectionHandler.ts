@@ -68,7 +68,7 @@ export default class ConnectionHandler extends EventEmitter<{
       if (length > MAX_MESSAGE_SIZE) {
         throw new RangeError("message payload length too large");
       }
-      const packetID = data.readVarInt();
+      const packetID = data.readVarInt(); // TODO: This could throw an error on invalid data
       const payload = new MineBuffer(data.readBytes(length - data.lastReadVarIntLength));
       this.emit("message", { packetID, payload });
     } while (this.buffer.remaining > 0);

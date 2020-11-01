@@ -28,11 +28,15 @@
   "scripts": {
     "start": "node --experimental-wasm-bigint dist/app.js",
     "lint": "eslint --fix --ext ts src",
-    "test": "eslint --ext ts src && tsc --noEmit && jest"
+    "clean": "rm -rf dist/*",
+    "test": "eslint --ext ts src && tsc --noEmit && jest",
+    "build": "make"
   },
   "pre-commit": {
     "run": [
-      "test"
+      "clean",
+      "test",
+      "build"
     ],
     "silent": true
   }
