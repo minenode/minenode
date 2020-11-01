@@ -15,6 +15,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import Long from "long";
+import uuid from "uuid";
+
+import BasicPosition3D from "./geometry/BasicPosition3D";
+import { IBasicPosition3D } from "./geometry/BasicPosition3D";
 
 export const ALLOC_SIZE = 1024;
 export const EXPAND_THRESHOLD = 32;
@@ -75,6 +79,53 @@ export default class MineBuffer {
   }
 
   /**
+   * Reads an unsigned 8-bit integer from the buffer.
+   */
+  public readUByte(): number {
+    return this.readByte() & 0xff;
+  }
+
+  /**
+   * Reads a boolean (0x00 or 0x01) from the buffer.
+   * @throws {TypeError} if the value read is not 0x00 or 0x01.
+   */
+  public readBoolean(): boolean {
+    const value = this.readByte();
+    if (value === 0x00) return false;
+    else if (value === 0x01) return true;
+    else throw new TypeError("invalid value for encoded boolean");
+  }
+
+  /**
+   * Read a signed 32-bit integer, two's complement.
+   */
+  public readInt(): number {
+    return this.readBytes(4).readInt32BE();
+  }
+
+  /**
+   * Read a signed 64-bit integer, two's complement.
+   */
+  public readLong(): Long {
+    const bytes = this.readBytes(8);
+    return Long.fromBytesBE(Array.from(bytes), false);
+  }
+
+  /**
+   * Read a single-precision 32-bit IEEE 754 floating point number.
+   */
+  public readFloat(): number {
+    return this.readBytes(4).readFloatBE();
+  }
+
+  /**
+   * Read a double-precision 64-bit IEEE 754 floating point number.
+   */
+  public readDouble(): number {
+    return this.readBytes(8).readDoubleBE();
+  }
+
+  /**
    * Reads a variable-length integer (VarInt).
    * @throws {Error} if the VarInt is too large
    */
@@ -113,6 +164,7 @@ export default class MineBuffer {
 
   /**
    * Reads a string VarInt length prefixed UTF-8 encoded string from the buffer.
+   * @throws {Error} if the read length prefix is invalid
    */
   public readString(): string {
     const len = this.readVarInt();
@@ -122,11 +174,41 @@ export default class MineBuffer {
   }
 
   /**
+   * Reads a signed 16 bit integer.
+   */
+  public readShort(): number {
+    return this.readBytes(2).readInt16BE();
+  }
+
+  /**
    * Reads an unsigned 16 bit integer.
    */
   public readUShort(): number {
-    // Slightly faster than readBytes(2).readUInt16BE()
-    return ((this.readByte() & 0xff) << 8) | (this.readByte() & 0xff);
+    return this.readBytes(2).readUInt16BE();
+  }
+
+  /**
+   * Reads an integer X/Y/Z position from 8 bytes.
+   */
+  public readPosition(): BasicPosition3D {
+    const val = Long.fromBytesBE(Array.from(this.readBytes(8)), true);
+    let x = val.shiftRight(38);
+    let y = val.and(0xfff);
+    let z = val.shiftLeft(26).shiftRight(38);
+
+    if (x.greaterThanOrEqual(2 ** 25)) x = x.subtract(2 ** 26);
+    if (y.greaterThanOrEqual(2 ** 11)) y = y.subtract(2 ** 12);
+    if (z.greaterThanOrEqual(2 ** 25)) z = z.subtract(2 ** 26);
+
+    return new BasicPosition3D(x.toInt(), y.toInt(), z.toInt());
+  }
+
+  /**
+   * Reads a UUID in string form.
+   */
+  public readUUID(): string {
+    const bytes = this.readBytes(16);
+    return uuid.stringify(bytes);
   }
 
   /**
@@ -153,5 +235,153 @@ export default class MineBuffer {
     return this;
   }
 
-  // TODO: Finish implementation
+  /**
+   * Appends a boolean to the buffer (0x00 = false, 0x01 = true).
+   * @param value the boolean to encode
+   */
+  public writeBoolean(value: boolean): this {
+    this.writeByte(value ? 1 : 0);
+    return this;
+  }
+
+  /**
+   * Writes a float to the buffer.
+   * @param value the value to write
+   */
+  public writeFloat(value: number): this {
+    const b = Buffer.alloc(4);
+    b.writeFloatBE(value);
+    this.writeBytes(b);
+    return this;
+  }
+
+  /**
+   * Writes a double to the buffer.
+   * @param value the value to write
+   */
+  public writeDouble(value: number): this {
+    const b = Buffer.alloc(8);
+    b.writeDoubleBE(value);
+    this.writeBytes(b);
+    return this;
+  }
+
+  /**
+   * Writes a 32-bit signed integer to the buffer.
+   * @param value the value to write
+   */
+  public writeInt(value: number): this {
+    const b = Buffer.alloc(4);
+    b.writeInt32BE(value);
+    this.writeBytes(b);
+    return this;
+  }
+
+  /**
+   * Writes a 64-bit signed integer to the buffer.
+   * @param value the value to write
+   */
+  public writeLong(value: Long): this {
+    this.writeBytes(Buffer.from(value.toSigned().toBytesBE()));
+    return this;
+  }
+
+  /**
+   * Encodes an integer X/Y/Z position to a 64-bit value.
+   * @param pos the position to encode
+   */
+  public writePosition(pos: IBasicPosition3D): this {
+    const val = Long.fromInt(pos.x & 0x3ffffff, true)
+      .shiftLeft(38)
+      .or(Long.fromInt(pos.z & 0x3ffffff, true).shiftLeft(12))
+      .or(Long.fromInt(pos.y & 0xfff, true));
+    const bytes = Buffer.from(val.toBytesBE());
+    this.writeBytes(bytes);
+    return this;
+  }
+
+  /**
+   * Encodes a UUID to a 128-bit value.
+   * @param value the UUID to write, in string format
+   * @throws {TypeError} if the UUID is invalid
+   */
+  public writeUUID(value: string): this {
+    if (!uuid.validate(value)) throw new TypeError("invalid uuid to encode");
+    this.writeBytes(Buffer.from(uuid.parse(value)));
+    return this;
+  }
+
+  /**
+   * Writes a 16-bit signed integer to the buffer.
+   * @param value the value to write
+   */
+  public writeShort(value: number): this {
+    const b = Buffer.alloc(2);
+    b.writeInt16BE(value);
+    this.writeBytes(b);
+    return this;
+  }
+
+  /**
+   * Writes a variable-length integer (VarInt) to the buffer.
+   * @param value the number to encode
+   * @throws {TypeError} if the value passed is not an integer
+   */
+  public writeVarInt(value: number): this {
+    if (value !== ~~value) throw new TypeError("value must be an integer");
+    do {
+      let temp = value & 0b01111111;
+      value >>>= 7;
+      if (value != 0) temp |= 0b10000000;
+      this.writeByte(temp);
+    } while (value != 0);
+    return this;
+  }
+
+  /**
+   * Writes a variable-length Long (VarLong) to the buffer.
+   * @param value the value to write
+   */
+  public writeVarLong(value: Long): this {
+    do {
+      let temp = value.and(0b10000000);
+      value = value.shiftRightUnsigned(7);
+      if (value.notEquals(0)) temp = temp.or(0b10000000);
+      this.writeByte(temp.toInt());
+    } while (value.notEquals(0));
+    return this;
+  }
+
+  /**
+   * Writes a VarInt length-prefixed UTF-8 encoded string to the buffer.
+   * @param value the string to encode
+   * @throws {Error} if the string exceeds the maximum byte length when encoded as UTF-8.
+   */
+  public writeString(value: string): this {
+    const bytes = Buffer.from(value, "utf-8");
+    if (bytes.length > 32767 * 4) throw new Error("encoded string exceeds max length");
+    this.writeVarInt(bytes.length);
+    this.writeBytes(bytes);
+    return this;
+  }
+
+  /**
+   * Wries an unsigned 8-bit integer (byte) to the buffer.
+   * @param value the value to write
+   */
+  public writeUByte(value: number): this {
+    this.writeByte((value << 24) >> 24); // Converts u8 -> i8
+    return this;
+  }
+
+  /**
+   * Writes an unsigned 16-bit integer to the buffer (big-endian).
+   * @param value the value to write
+   */
+  public writeUShort(value: number): this {
+    const b = Buffer.allocUnsafe(2);
+    b.writeUInt16BE(value);
+    this.writeBytes(b);
+    return this;
+  }
 }
