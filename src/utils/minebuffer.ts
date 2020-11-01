@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Long from "long";
-import uuid from "uuid";
+import * as Long from "long";
+import * as uuid from "uuid";
 
 import BasicPosition3D from "./geometry/BasicPosition3D";
 import { IBasicPosition3D } from "./geometry/BasicPosition3D";
@@ -192,15 +192,11 @@ export default class MineBuffer {
    */
   public readPosition(): BasicPosition3D {
     const val = Long.fromBytesBE(Array.from(this.readBytes(8)), true);
-    let x = val.shiftRight(38);
-    let y = val.and(0xfff);
-    let z = val.shiftLeft(26).shiftRight(38);
+    const x = val.shiftRight(38);
+    const y = val.and(0xfff);
+    const z = val.shiftLeft(26).shiftRight(38);
 
-    if (x.greaterThanOrEqual(2 ** 25)) x = x.subtract(2 ** 26);
-    if (y.greaterThanOrEqual(2 ** 11)) y = y.subtract(2 ** 12);
-    if (z.greaterThanOrEqual(2 ** 25)) z = z.subtract(2 ** 26);
-
-    return new BasicPosition3D(x.toInt(), y.toInt(), z.toInt());
+    return new BasicPosition3D(x.toSigned().toInt(), y.toSigned().toInt(), z.toSigned().toInt());
   }
 
   /**
@@ -333,7 +329,7 @@ export default class MineBuffer {
       let temp = value & 0b01111111;
       value >>>= 7;
       if (value != 0) temp |= 0b10000000;
-      this.writeByte(temp);
+      this.writeByte((temp << 24) >> 24);
     } while (value != 0);
     return this;
   }
@@ -344,10 +340,10 @@ export default class MineBuffer {
    */
   public writeVarLong(value: Long): this {
     do {
-      let temp = value.and(0b10000000);
+      let temp = value.and(0b01111111);
       value = value.shiftRightUnsigned(7);
       if (value.notEquals(0)) temp = temp.or(0b10000000);
-      this.writeByte(temp.toInt());
+      this.writeByte((temp.toInt() << 24) >> 24);
     } while (value.notEquals(0));
     return this;
   }

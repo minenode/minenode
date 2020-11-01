@@ -4,7 +4,7 @@
     "target": "es2018",
     "strict": true,
     "moduleResolution": "node",
-    "esModuleInterop": true,
+    "esModuleInterop": false,
     "declaration": true,
     "sourceMap": true,
     "skipLibCheck": true,
