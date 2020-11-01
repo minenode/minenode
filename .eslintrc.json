@@ -18,6 +18,6 @@
     "@typescript-eslint/explicit-module-boundary-types": "warn"
   },
   "parserOptions": {
-    "project": "tsconfig.json"
+    "project": "tsconfig.eslint.json"
   }
 }

@@ -202,11 +202,15 @@ export default class MineBuffer {
    */
   public readPosition(): BasicPosition3D {
     const val = Long.fromBytesBE(Array.from(this.readBytes(8)), true);
-    const x = val.shiftRight(38);
-    const y = val.and(0xfff);
-    const z = val.shiftLeft(26).shiftRight(38);
+    let x = val.shiftRight(38).toSigned();
+    let y = val.and(0xfff).toSigned();
+    let z = val.shiftLeft(26).shiftRight(38).toSigned();
 
-    return new BasicPosition3D(x.toSigned().toInt(), y.toSigned().toInt(), z.toSigned().toInt());
+    if (x.greaterThanOrEqual(2 ** 25)) x = x.sub(2 ** 26);
+    if (y.greaterThanOrEqual(2 ** 11)) y = y.sub(2 ** 12);
+    if (z.greaterThanOrEqual(2 ** 25)) z = z.sub(2 ** 26);
+
+    return new BasicPosition3D(x.toInt(), y.toInt(), z.toInt());
   }
 
   /**
@@ -233,10 +237,9 @@ export default class MineBuffer {
    */
   public writeBytes(bytes: Buffer): this {
     if (this.buffer.length - this.writeOffset - bytes.length < EXPAND_THRESHOLD) {
-      this.buffer = Buffer.concat([this.buffer, bytes, Buffer.alloc(ALLOC_SIZE)]);
-    } else {
-      bytes.copy(this.buffer, this.writeOffset);
+      this.buffer = Buffer.concat([this.buffer, Buffer.alloc(bytes.length + ALLOC_SIZE)], this.buffer.length + bytes.length + ALLOC_SIZE);
     }
+    bytes.copy(this.buffer, this.writeOffset);
     this.writeOffset += bytes.length;
     return this;
   }
