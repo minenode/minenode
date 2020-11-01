@@ -1,5 +1,6 @@
-<img src="docs/assets/icon_large.png" style="height: 3rem; vertical-align: middle; padding: 1rem;">
-<h1 style="display: inline; vertical-align: middle;">MineNode</h1>
+<img src="docs/assets/icon_large.png" height="48">
+
+# MineNode
 
 A _Minecraft: Java Edition_ server built on top of Node.JS.
 
