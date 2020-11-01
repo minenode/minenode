@@ -57,6 +57,16 @@ export default class MineBuffer {
   }
 
   /**
+   * Resets this buffer to a zeroed state.
+   */
+  public reset(): this {
+    this.buffer = Buffer.alloc(ALLOC_SIZE);
+    this.readOffset = 0;
+    this.writeOffset = 0;
+    return this;
+  }
+
+  /**
    * Reads a byte (signed) from the buffer.
    * @throws {RangeError} if the buffer is exhausted.
    */
