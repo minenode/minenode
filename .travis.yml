@@ -1,0 +1,14 @@
+language: node_js
+node_js:
+ - "13"
+ - "14"
+cache: yarn
+jobs:
+  include:
+   - stage: test
+     script:
+     - yarn
+     - yarn test
+stages:
+ - name: test
+   if: type = push
