@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import * as net from "net";
+import * as zlib from "zlib";
 
 import { EventEmitter } from "eventemitter3";
 import MineBuffer from "../utils/MineBuffer";
@@ -31,6 +32,7 @@ export default class ConnectionHandler extends EventEmitter<{
 }> {
   public socket: net.Socket;
   public buffer: MineBuffer = new MineBuffer();
+  public compression = false;
 
   public constructor(socket: net.Socket) {
     super();
@@ -40,6 +42,24 @@ export default class ConnectionHandler extends EventEmitter<{
     this.socket.on("close", this._onClose.bind(this));
     this.socket.on("data", this._onData.bind(this));
     this.socket.on("error", this._onError.bind(this));
+  }
+
+  public write(packetID: number, payload: MineBuffer): void {
+    let buffer = new MineBuffer();
+    buffer.writeVarInt(packetID);
+    buffer.writeBytes(payload.readBytes(payload.remaining));
+
+    if (this.compression) {
+      const data = new MineBuffer();
+      data.writeVarInt(buffer.remaining);
+      data.writeBytes(zlib.gzipSync(buffer.readBytes(buffer.remaining)));
+      buffer = data;
+    }
+
+    const data = new MineBuffer();
+    data.writeVarInt(buffer.remaining);
+    data.writeBytes(buffer.readBytes(buffer.remaining));
+    this.socket.write(data.readBytes(data.remaining));
   }
 
   protected _onClose(/* hadError = false */): void {
@@ -56,24 +76,31 @@ export default class ConnectionHandler extends EventEmitter<{
 
     while (this.buffer.remaining > 0) {
       const readOffset = this.buffer.readOffset;
+      let payload: MineBuffer;
+
       try {
         const length = this.buffer.readVarInt();
-        // TODO: Compression
-        const payloadOffset = this.buffer.readOffset;
-        const packetID = this.buffer.readVarInt();
-        const data = this.buffer.readBytes(length - this.buffer.readOffset + payloadOffset);
-        const payload = new MineBuffer(data);
-        this.emit("message", { packetID, payload });
+        payload = new MineBuffer(this.buffer.readBytes(length));
       } catch (e) {
-        if (e instanceof RangeError) {
-          if (e.message === "readBytes() out-of-bounds") {
-            this.buffer.readOffset = readOffset;
-            break;
-          }
+        if (e instanceof RangeError && e.message === "readBytes() out-of-bounds") {
+          this.buffer.readOffset = readOffset;
+          break;
         }
-        // TODO handle
         throw e;
       }
+
+      if (this.compression) {
+        const dataLength = payload.readVarInt();
+        if (dataLength !== 0) {
+          payload = new MineBuffer(zlib.gunzipSync(payload.readBytes(payload.remaining)));
+          if (dataLength !== payload.remaining) {
+            throw new RangeError("uncompressed length does not match");
+          }
+        }
+      }
+
+      const packetID = payload.readVarInt();
+      this.emit("message", { packetID, payload });
     }
 
     this.buffer = new MineBuffer(this.buffer.readBytes(this.buffer.remaining));

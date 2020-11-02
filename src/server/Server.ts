@@ -18,6 +18,7 @@ import { EventEmitter } from "eventemitter3";
 
 import * as net from "net";
 import ConnectionHandler from "../net/ConnectionHandler";
+import MineBuffer from "../utils/MineBuffer";
 
 export default class Server extends EventEmitter {
   public tcpServer: net.Server = new net.Server();
@@ -48,6 +49,25 @@ export default class Server extends EventEmitter {
     });
     connection.on("message", msg => {
       console.log(`[server] message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv from ${remote}`);
+
+      // FOR TESTING
+      const data = new MineBuffer();
+      const json = JSON.stringify({
+        version: {
+          name: "1.8.7",
+          protocol: 47,
+        },
+        players: {
+          max: 100,
+          online: 0,
+          sample: [],
+        },
+        description: {
+          text: "Hello, World!",
+        },
+      });
+      data.writeString(json);
+      connection.write(0, data);
     });
   }
 }
