@@ -253,7 +253,9 @@ export default class MineBuffer {
    * @param byte the byte to append
    */
   public writeByte(byte: number): this {
-    if (this.buffer.length - this.writeOffset - 1 < EXPAND_THRESHOLD) this.buffer = Buffer.concat([this.buffer, Buffer.alloc(ALLOC_SIZE)]);
+    if (this.buffer.length - this.writeOffset - 1 < EXPAND_THRESHOLD) {
+      this.buffer = Buffer.concat([this.buffer, Buffer.alloc(1 + ALLOC_SIZE)], this.buffer.length + 1 + ALLOC_SIZE);
+    }
     this.buffer.writeInt8(byte, this.writeOffset++);
     return this;
   }
