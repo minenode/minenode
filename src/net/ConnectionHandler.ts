@@ -17,7 +17,7 @@
 import * as net from "net";
 
 import { EventEmitter } from "eventemitter3";
-import MineBuffer from "../utils/minebuffer";
+import MineBuffer from "../utils/MineBuffer";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
 export const MAX_MESSAGE_SIZE = 1024 * 1024 * 4;
@@ -54,24 +54,29 @@ export default class ConnectionHandler extends EventEmitter<{
 
     this.buffer.writeBytes(data);
 
-    // TODO: Compression
-
-    do {
-      let data, length;
+    while (this.buffer.remaining > 0) {
+      const readOffset = this.buffer.readOffset;
       try {
-        length = this.buffer.readVarInt();
-        data = new MineBuffer(this.buffer.readBytes(length));
-      } catch {
-        this.buffer.readOffset -= this.buffer.lastReadVarIntLength;
-        break;
+        const length = this.buffer.readVarInt();
+        // TODO: Compression
+        const payloadOffset = this.buffer.readOffset;
+        const packetID = this.buffer.readVarInt();
+        const data = this.buffer.readBytes(length - this.buffer.readOffset + payloadOffset);
+        const payload = new MineBuffer(data);
+        this.emit("message", { packetID, payload });
+      } catch (e) {
+        if (e instanceof RangeError) {
+          if (e.message === "readBytes() out-of-bounds") {
+            this.buffer.readOffset = readOffset;
+            break;
+          }
+        }
+        // TODO handle
+        throw e;
       }
-      if (length > MAX_MESSAGE_SIZE) {
-        throw new RangeError("message payload length too large");
-      }
-      const packetID = data.readVarInt(); // TODO: This could throw an error on invalid data
-      const payload = new MineBuffer(data.readBytes(length - data.lastReadVarIntLength));
-      this.emit("message", { packetID, payload });
-    } while (this.buffer.remaining > 0);
+    }
+
+    this.buffer = new MineBuffer(this.buffer.readBytes(this.buffer.remaining));
   }
 
   protected _onError(error: unknown): void {

@@ -1,4 +1,4 @@
-// minebuffer.ts - a binary buffer supporting Minecraft protocol types
+// MineBuffer.ts - a binary buffer supporting Minecraft protocol types
 // Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,6 @@ import * as uuid from "uuid";
 import BasicPosition3D from "./geometry/BasicPosition3D";
 import { IBasicPosition3D } from "./geometry/BasicPosition3D";
 
-export const ALLOC_SIZE = 1024;
-export const EXPAND_THRESHOLD = 32;
-
 /**
  * A wrapper around a Buffer offering dynamic size and support for Minecraft protocol types.
  */
@@ -31,12 +28,9 @@ export default class MineBuffer {
   public writeOffset = 0;
   public readOffset = 0;
 
-  protected _lastReadVarIntLength = 0;
-  protected _lastReadVarLongLength = 0;
-
-  public constructor(buffer?: Uint8Array) {
+  public constructor(buffer?: Buffer) {
     if (typeof buffer === "undefined") {
-      this.buffer = Buffer.alloc(ALLOC_SIZE);
+      this.buffer = Buffer.alloc(0);
     } else {
       this.buffer = Buffer.from(buffer);
       this.writeOffset = buffer.length;
@@ -44,17 +38,13 @@ export default class MineBuffer {
   }
 
   /**
-   * The length, in bytes, of the last read VarInt.
+   * Ensure at least `size` bytes are available for writing.
    */
-  public get lastReadVarIntLength(): number {
-    return this._lastReadVarIntLength;
-  }
-
-  /**
-   * The length, in bytes, of the last read VarLong.
-   */
-  public get lastReadVarLongLength(): number {
-    return this._lastReadVarLongLength;
+  public reserve(size: number): void {
+    if (this.buffer.length - this.writeOffset < size) {
+      const padding = Math.max(size, this.buffer.length);
+      this.buffer = Buffer.concat([this.buffer, Buffer.alloc(padding)]);
+    }
   }
 
   /**
@@ -85,19 +75,10 @@ export default class MineBuffer {
    * Resets this buffer to a zeroed state.
    */
   public reset(): this {
-    this.buffer = Buffer.alloc(ALLOC_SIZE);
+    this.buffer = Buffer.alloc(0);
     this.readOffset = 0;
     this.writeOffset = 0;
     return this;
-  }
-
-  /**
-   * Reads a byte (signed) from the buffer.
-   * @throws {RangeError} if the buffer is exhausted.
-   */
-  public readByte(): number {
-    if (this.readOffset + 1 > this.writeOffset) throw new RangeError("read() out-of-bounds");
-    return this.buffer.readInt8(this.readOffset++);
   }
 
   /**
@@ -107,10 +88,16 @@ export default class MineBuffer {
    */
   public readBytes(n: number): Buffer {
     if (n < 0 || ~~n !== n) throw new RangeError("n must be a positive integer");
-    if (this.readOffset + n > this.writeOffset) throw new RangeError("readBytes() out-of-bounds");
-    const res = this.buffer.slice(this.readOffset, this.readOffset + n);
-    this.readOffset += n;
-    return res;
+    if (this.remaining < n) throw new RangeError("readBytes() out-of-bounds");
+    return this.buffer.slice(this.readOffset, (this.readOffset += n));
+  }
+
+  /**
+   * Reads a byte (signed) from the buffer.
+   * @throws {RangeError} if the buffer is exhausted.
+   */
+  public readByte(): number {
+    return this.readBytes(1).readInt8();
   }
 
   /**
@@ -175,7 +162,6 @@ export default class MineBuffer {
       numRead++;
       if (numRead > 5) throw new Error("VarInt is too big");
     } while ((read & 0b10000000) != 0);
-    this._lastReadVarIntLength = numRead;
     return result;
   }
 
@@ -195,7 +181,6 @@ export default class MineBuffer {
       numRead++;
       if (numRead > 10) throw new Error("VarLong is too big");
     } while ((read & 0b10000000) != 0);
-    this._lastReadVarLongLength = numRead;
     return result;
   }
 
@@ -249,27 +234,24 @@ export default class MineBuffer {
   }
 
   /**
-   * Appends a byte (signed) to the buffer.
-   * @param byte the byte to append
-   */
-  public writeByte(byte: number): this {
-    if (this.buffer.length - this.writeOffset - 1 < EXPAND_THRESHOLD) {
-      this.buffer = Buffer.concat([this.buffer, Buffer.alloc(1 + ALLOC_SIZE)], this.buffer.length + 1 + ALLOC_SIZE);
-    }
-    this.buffer.writeInt8(byte, this.writeOffset++);
-    return this;
-  }
-
-  /**
    * Appends many bytes to the buffer.
    * @param bytes the bytes to append
    */
   public writeBytes(bytes: Buffer): this {
-    if (this.buffer.length - this.writeOffset - bytes.length < EXPAND_THRESHOLD) {
-      this.buffer = Buffer.concat([this.buffer, Buffer.alloc(bytes.length + ALLOC_SIZE)], this.buffer.length + bytes.length + ALLOC_SIZE);
-    }
+    this.reserve(bytes.length);
     bytes.copy(this.buffer, this.writeOffset);
     this.writeOffset += bytes.length;
+    return this;
+  }
+
+  /**
+   * Appends a byte (signed) to the buffer.
+   * @param byte the byte to append
+   */
+  public writeByte(byte: number): this {
+    this.reserve(1);
+    this.buffer.writeInt8(byte, this.writeOffset);
+    this.writeOffset += 1;
     return this;
   }
 
@@ -287,9 +269,9 @@ export default class MineBuffer {
    * @param value the value to write
    */
   public writeFloat(value: number): this {
-    const b = Buffer.alloc(4);
-    b.writeFloatBE(value);
-    this.writeBytes(b);
+    this.reserve(4);
+    this.buffer.writeFloatBE(value, this.writeOffset);
+    this.writeOffset += 4;
     return this;
   }
 
@@ -298,9 +280,9 @@ export default class MineBuffer {
    * @param value the value to write
    */
   public writeDouble(value: number): this {
-    const b = Buffer.alloc(8);
-    b.writeDoubleBE(value);
-    this.writeBytes(b);
+    this.reserve(8);
+    this.buffer.writeDoubleBE(value, this.writeOffset);
+    this.writeOffset += 8;
     return this;
   }
 
@@ -309,9 +291,9 @@ export default class MineBuffer {
    * @param value the value to write
    */
   public writeInt(value: number): this {
-    const b = Buffer.alloc(4);
-    b.writeInt32BE(value);
-    this.writeBytes(b);
+    this.reserve(4);
+    this.buffer.writeInt32BE(value, this.writeOffset);
+    this.writeOffset += 4;
     return this;
   }
 
@@ -354,9 +336,9 @@ export default class MineBuffer {
    * @param value the value to write
    */
   public writeShort(value: number): this {
-    const b = Buffer.alloc(2);
-    b.writeInt16BE(value);
-    this.writeBytes(b);
+    this.reserve(2);
+    this.buffer.writeInt16BE(value, this.writeOffset);
+    this.writeOffset += 2;
     return this;
   }
 
@@ -417,9 +399,9 @@ export default class MineBuffer {
    * @param value the value to write
    */
   public writeUShort(value: number): this {
-    const b = Buffer.allocUnsafe(2);
-    b.writeUInt16BE(value);
-    this.writeBytes(b);
+    this.reserve(2);
+    this.buffer.writeUInt16BE(value, this.writeOffset);
+    this.writeOffset += 2;
     return this;
   }
 }

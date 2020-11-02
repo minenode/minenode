@@ -1,4 +1,4 @@
-import MineBuffer from "../../src/utils/minebuffer";
+import MineBuffer from "../../src/utils/MineBuffer";
 import * as Long from "long";
 import * as uuid from "uuid";
 
