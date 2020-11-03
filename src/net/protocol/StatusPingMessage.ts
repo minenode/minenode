@@ -1,4 +1,4 @@
-// Message.ts - Base classes and interfaces for protocol messages
+// StatusPingMessage.ts - handle status ping messages
 // Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,29 +15,25 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import Server from "../../server/Server";
-import Player from "../../server/Player";
 import MineBuffer from "../../utils/MineBuffer";
 import Connection from "../Connection";
+import { MessageHandler } from "./Message";
 
-export interface MessageHandlerOptions {
-  state: number;
-  id: number;
-  label: string;
-  server: Server;
-}
-
-export abstract class MessageHandler {
-  public readonly state: number;
-  public readonly id: number;
-  public readonly label: string;
-  public readonly server: Server;
-
-  public constructor(options: MessageHandlerOptions) {
-    this.state = options.state;
-    this.id = options.id;
-    this.label = options.label;
-    this.server = options.server;
+export class StatusPingMessageHandler extends MessageHandler {
+  public constructor(server: Server, state: number, id: number) {
+    super({
+      state: state,
+      id: id,
+      label: "status request",
+      server: server,
+    });
   }
 
-  public abstract handle(buffer: MineBuffer, player: Connection | Player): void;
+  public handle(buffer: MineBuffer, player: Connection): void {
+    const payload = buffer.readLong();
+    const responseBuffer = new MineBuffer();
+    responseBuffer.writeLong(payload);
+    player.write(1, responseBuffer);
+    console.log(`[server] status ping (payload = ${payload}) from ${player.remote}`);
+  }
 }

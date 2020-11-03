@@ -15,14 +15,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { EventEmitter } from "eventemitter3";
-import ConnectionHandler from "../net/ConnectionHandler";
+import Connection from "../net/Connection";
 import Server from "./Server";
 
 export default class Player extends EventEmitter {
-  public connection: ConnectionHandler;
+  public connection: Connection;
   public server: Server;
 
-  public constructor(server: Server, connection: ConnectionHandler) {
+  public constructor(server: Server, connection: Connection) {
     super();
     this.connection = connection;
     this.server = server;
