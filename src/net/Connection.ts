@@ -1,4 +1,4 @@
-// ConnectionHandler.ts - Provides a wrapper around an inbound TCP socket which handles message framing, etc.
+// Connection.ts - Provides a wrapper around an inbound TCP socket which handles message framing, etc.
 // Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -21,22 +21,25 @@ import { EventEmitter } from "eventemitter3";
 import MineBuffer from "../utils/MineBuffer";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
-export const MAX_MESSAGE_SIZE = 1024 * 1024 * 4;
 
 /**
  * A wrapper class around an incoming TCP socket. Handles message framing, encryption, etc.
  */
-export default class ConnectionHandler extends EventEmitter<{
+export default class Connection extends EventEmitter<{
   message: [{ packetID: number; payload: MineBuffer }];
   disconnect: [];
 }> {
   public socket: net.Socket;
+  public remote: string;
   public buffer: MineBuffer = new MineBuffer();
   public compression = false;
+  public state = 0;
+  public clientProtocol?: number;
 
   public constructor(socket: net.Socket) {
     super();
     this.socket = socket;
+    this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
 
     // Bind events - close, data, error
     this.socket.on("close", this._onClose.bind(this));

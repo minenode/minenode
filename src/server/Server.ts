@@ -17,18 +17,27 @@
 import { EventEmitter } from "eventemitter3";
 
 import * as net from "net";
-import ConnectionHandler from "../net/ConnectionHandler";
-import MineBuffer from "../utils/MineBuffer";
+import Connection from "../net/Connection";
+import { HandshakeMessageHandler } from "../net/protocol/HandshakeMessage";
+import { MessageHandler } from "../net/protocol/Message";
+import { StatusPingMessageHandler } from "../net/protocol/StatusPingMessage";
+import { StatusRequestMessageHandler } from "../net/protocol/StatusRequestMessage";
 
 export default class Server extends EventEmitter {
   public tcpServer: net.Server = new net.Server();
-  public connections: Set<ConnectionHandler> = new Set();
+  public connections: Set<Connection> = new Set();
+  public handlers: Set<MessageHandler> = new Set();
 
   public constructor() {
     super();
 
     // Bind events
     this.tcpServer.on("connection", this._onSocketConnect.bind(this));
+
+    // Install handlers
+    this.handlers.add(new HandshakeMessageHandler(this, 0, 0));
+    this.handlers.add(new StatusRequestMessageHandler(this, 1, 0));
+    this.handlers.add(new StatusPingMessageHandler(this, 1, 1));
   }
 
   public start(): void {
@@ -38,36 +47,26 @@ export default class Server extends EventEmitter {
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
-    const remote = `${socket.remoteAddress}:${socket.remotePort}`;
-    console.log(`[server] connection from ${remote}`);
-    const connection = new ConnectionHandler(socket);
+    const connection = new Connection(socket);
+    console.log(`[server] connection from ${connection.remote}`);
     this.connections.add(connection);
+
     // Bind connection events -- TODO: move this to Player class
     connection.on("disconnect", () => {
-      console.log(`[server] ${remote} disconnected`);
+      console.log(`[server] ${connection.remote} disconnected`);
       this.connections.delete(connection);
     });
-    connection.on("message", msg => {
-      console.log(`[server] message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv from ${remote}`);
 
-      // FOR TESTING
-      const data = new MineBuffer();
-      const json = JSON.stringify({
-        version: {
-          name: "1.8.7",
-          protocol: 47,
-        },
-        players: {
-          max: 100,
-          online: 0,
-          sample: [],
-        },
-        description: {
-          text: "Hello, World!",
-        },
-      });
-      data.writeString(json);
-      connection.write(0, data);
+    connection.on("message", msg => {
+      console.log(`[server] message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv from ${connection.remote}`);
+      for (const handler of this.handlers) {
+        if (handler.state != connection.state) continue;
+        if (handler.id != msg.packetID) continue;
+        handler.handle(msg.payload, connection); // TODO player
+        return;
+      }
+      // TODO handle
+      console.error(`[server] invalid message recv (state = ${connection.state}, id = ${msg.packetID})`);
     });
   }
 }
