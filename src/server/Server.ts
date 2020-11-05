@@ -15,18 +15,22 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { EventEmitter } from "eventemitter3";
-
 import * as net from "net";
-import Connection from "../net/Connection";
-import { HandshakeMessageHandler } from "../net/protocol/HandshakeMessage";
-import { MessageHandler } from "../net/protocol/Message";
-import { StatusPingMessageHandler } from "../net/protocol/StatusPingMessage";
-import { StatusRequestMessageHandler } from "../net/protocol/StatusRequestMessage";
+import * as fs from "fs";
+import * as path from "path";
+import * as appRootPath from "app-root-path";
+
+import Connection, { getConnectionState } from "./Connection";
+import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
 
 export default class Server extends EventEmitter {
   public tcpServer: net.Server = new net.Server();
   public connections: Set<Connection> = new Set();
-  public handlers: Set<MessageHandler> = new Set();
+  public handlerFactory: MessageHandlerFactory;
+
+  public encodedFavicon?: string;
+
+  // TODO: options
 
   public constructor() {
     super();
@@ -34,39 +38,58 @@ export default class Server extends EventEmitter {
     // Bind events
     this.tcpServer.on("connection", this._onSocketConnect.bind(this));
 
-    // Install handlers
-    this.handlers.add(new HandshakeMessageHandler(this, 0, 0));
-    this.handlers.add(new StatusRequestMessageHandler(this, 1, 0));
-    this.handlers.add(new StatusPingMessageHandler(this, 1, 1));
+    this.handlerFactory = new MessageHandlerFactory(this);
+  }
+
+  public loadServerIcon(): void {
+    // TODO: this path should be passed as part of config
+    const serverIconPath = path.resolve(appRootPath.path, "server-icon.png");
+    if (fs.existsSync(serverIconPath) && fs.statSync(serverIconPath).isFile()) {
+      if (fs.statSync(serverIconPath).size > 1024 * 1024) {
+        console.error("[server/ERROR] server-icon.png is too large. Cannot exceed 1 MB.");
+        return;
+      } else {
+        const raw = fs.readFileSync(serverIconPath);
+        this.encodedFavicon = "data:image/png;base64," + raw.toString("base64");
+        console.log(`[server/DEBUG] loaded favicon from server-icon.png (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
+      }
+    } else {
+      console.log("[server/INFO] server-icon.png does not exist");
+    }
   }
 
   public start(): void {
+    this.loadServerIcon();
     // TODO: config in constructor
     this.tcpServer.listen(25565, "0.0.0.0");
-    console.log(`[server] server listening`);
+    console.log(`[server/INFO] server listening`);
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
     const connection = new Connection(socket);
-    console.log(`[server] connection from ${connection.remote}`);
+    console.log(`[server/INFO] ${connection.remote}: connected`);
     this.connections.add(connection);
 
     // Bind connection events -- TODO: move this to Player class
     connection.on("disconnect", () => {
-      console.log(`[server] ${connection.remote} disconnected`);
+      console.log(`[server/INFO] ${connection.remote}: disconnected`);
       this.connections.delete(connection);
     });
 
     connection.on("message", msg => {
-      console.log(`[server] message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv from ${connection.remote}`);
-      for (const handler of this.handlers) {
-        if (handler.state != connection.state) continue;
-        if (handler.id != msg.packetID) continue;
-        handler.handle(msg.payload, connection); // TODO player
-        return;
+      console.log(`[server/DEBUG] ${connection.remote}: message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv`);
+
+      const handler = this.handlerFactory.getHandler(msg.packetID, connection.state);
+
+      if (handler) {
+        handler.handle(msg.payload, connection);
+        console.log(`[server/DEBUG] ${connection.remote}: message '${handler.label}' handled`);
+      } else {
+        // TODO handle
+        console.error(
+          `[server/ERROR] ${connection.remote}: invalid message (state = ${getConnectionState(connection.state)} [${connection.state}]), id = ${msg.packetID})`,
+        );
       }
-      // TODO handle
-      console.error(`[server] invalid message recv (state = ${connection.state}, id = ${msg.packetID})`);
     });
   }
 }

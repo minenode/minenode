@@ -14,16 +14,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../server/Server";
-import MineBuffer from "../../utils/MineBuffer";
-import Connection from "../Connection";
-import { MessageHandler } from "./Message";
+import Server from "../../../../../server/Server";
+import MineBuffer from "../../../../../utils/MineBuffer";
+import Connection, { ConnectionState } from "../../../../../server/Connection";
+import { MessageHandler } from "../../../Message";
+import StatusPongMessage from "../clientbound/StatusPongMessage";
 
 export class StatusPingMessageHandler extends MessageHandler {
-  public constructor(server: Server, state: number, id: number) {
+  public constructor(server: Server) {
     super({
-      state: state,
-      id: id,
+      state: ConnectionState.STATUS,
+      id: 0x01,
       label: "status request",
       server: server,
     });
@@ -31,9 +32,10 @@ export class StatusPingMessageHandler extends MessageHandler {
 
   public handle(buffer: MineBuffer, player: Connection): void {
     const payload = buffer.readLong();
-    const responseBuffer = new MineBuffer();
-    responseBuffer.writeLong(payload);
-    player.write(1, responseBuffer);
-    console.log(`[server] status ping (payload = ${payload}) from ${player.remote}`);
+
+    const response = new StatusPongMessage(payload);
+    player.writeMessage(response);
+
+    console.log(`[server/DEBUG] ${player.remote}: status ping (payload = ${payload})`);
   }
 }

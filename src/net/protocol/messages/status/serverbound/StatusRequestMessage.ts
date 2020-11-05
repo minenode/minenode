@@ -14,39 +14,46 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../server/Server";
-import MineBuffer from "../../utils/MineBuffer";
-import Connection from "../Connection";
-import { MessageHandler } from "./Message";
+import Server from "../../../../../server/Server";
+import MineBuffer from "../../../../../utils/MineBuffer";
+import Connection, { ConnectionState } from "../../../../../server/Connection";
+import { MessageHandler } from "../../../Message";
+import StatusResponseMessage from "../clientbound/StatusResponseMessage";
 
 export class StatusRequestMessageHandler extends MessageHandler {
-  public constructor(server: Server, state: number, id: number) {
+  public constructor(server: Server) {
     super({
-      state: state,
-      id: id,
+      state: ConnectionState.STATUS,
+      id: 0x00,
       label: "status request",
       server: server,
     });
   }
 
   public handle(_buffer: MineBuffer, player: Connection): void {
-    const responseBuffer = new MineBuffer();
-    const json = JSON.stringify({
+    const response = new StatusResponseMessage({
       version: {
-        name: "1.16.4",
+        name: "MineNode 1.16.4",
         protocol: 754,
       },
       players: {
-        max: 100,
-        online: 5,
+        max: 420,
+        online: 69,
         sample: [],
       },
       description: {
-        text: "Hello, World!",
+        text: "Current time: ",
+        color: "white",
+        extra: [
+          {
+            text: new Date().toString(),
+            color: "gold",
+          },
+        ],
       },
+      favicon: this.server.encodedFavicon,
     });
-    responseBuffer.writeString(json);
-    player.write(0, responseBuffer);
-    console.log(`[server] status request from ${player.remote}`);
+    player.writeMessage(response);
+    console.log(`[server/DEBUG] ${player.remote}: status request`);
   }
 }

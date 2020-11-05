@@ -19,6 +19,7 @@ import * as uuid from "uuid";
 
 import BasicPosition3D from "./geometry/BasicPosition3D";
 import { IBasicPosition3D } from "./geometry/BasicPosition3D";
+import { Chat, isChat } from "./DataTypes";
 
 /**
  * A wrapper around a Buffer offering dynamic size and support for Minecraft protocol types.
@@ -193,6 +194,21 @@ export default class MineBuffer {
     if (len < 0 || len > 32767) throw new Error("Invalid length-prefix for string value");
     const bytes = this.readBytes(len);
     return bytes.toString("utf-8");
+  }
+
+  /**
+   * Reads a Chat from the buffer.
+   * @throws {Error} if the JSON is invalid
+   * @throws {TypeError} is the read chat is invalid
+   */
+  public readChat(): Chat {
+    const str = this.readString();
+    const decoded = JSON.parse(str);
+    if (isChat(decoded)) {
+      return decoded;
+    } else {
+      throw new TypeError("Invalid Chat");
+    }
   }
 
   /**
@@ -382,6 +398,15 @@ export default class MineBuffer {
     if (bytes.length > 32767 * 4) throw new Error("encoded string exceeds max length");
     this.writeVarInt(bytes.length);
     this.writeBytes(bytes);
+    return this;
+  }
+
+  /**
+   * Writes a Chat value (JSON-encoded) to the buffer.
+   * @param value the Chat to encode
+   */
+  public writeChat(value: Chat): this {
+    this.writeString(JSON.stringify(value));
     return this;
   }
 

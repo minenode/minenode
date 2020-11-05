@@ -5,7 +5,7 @@
     "strict": true,
     "moduleResolution": "node",
     "esModuleInterop": false,
-    "declaration": true,
+    // "declaration": true,
     "sourceMap": true,
     "skipLibCheck": true,
     "lib": ["esnext"],

@@ -19,8 +19,24 @@ import * as zlib from "zlib";
 
 import { EventEmitter } from "eventemitter3";
 import MineBuffer from "../utils/MineBuffer";
+import { IClientboundMessage } from "../net/protocol/Message";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
+
+export enum ConnectionState {
+  HANDSHAKE = 0,
+  STATUS = 1,
+  LOGIN = 2,
+  PLAY = 3,
+}
+
+export function getConnectionState(state: number): "HANDSHAKE" | "STATUS" | "LOGIN" | "PLAY" | null {
+  if (state === ConnectionState.HANDSHAKE) return "HANDSHAKE";
+  if (state === ConnectionState.STATUS) return "STATUS";
+  if (state === ConnectionState.LOGIN) return "LOGIN";
+  if (state === ConnectionState.PLAY) return "PLAY";
+  return null;
+}
 
 /**
  * A wrapper class around an incoming TCP socket. Handles message framing, encryption, etc.
@@ -33,7 +49,7 @@ export default class Connection extends EventEmitter<{
   public remote: string;
   public buffer: MineBuffer = new MineBuffer();
   public compression = false;
-  public state = 0;
+  public state = ConnectionState.HANDSHAKE;
   public clientProtocol?: number;
 
   public constructor(socket: net.Socket) {
@@ -45,6 +61,12 @@ export default class Connection extends EventEmitter<{
     this.socket.on("close", this._onClose.bind(this));
     this.socket.on("data", this._onData.bind(this));
     this.socket.on("error", this._onError.bind(this));
+  }
+
+  public writeMessage(message: IClientboundMessage): void {
+    const buffer = new MineBuffer();
+    message.encode(buffer);
+    this.write(message.id, buffer);
   }
 
   public write(packetID: number, payload: MineBuffer): void {
@@ -63,6 +85,10 @@ export default class Connection extends EventEmitter<{
     data.writeVarInt(buffer.remaining);
     data.writeBytes(buffer.readBytes(buffer.remaining));
     this.socket.write(data.readBytes(data.remaining));
+  }
+
+  public hardDisconnect(): void {
+    this.socket.destroy();
   }
 
   protected _onClose(/* hadError = false */): void {

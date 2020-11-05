@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../server/Server";
-import MineBuffer from "../../utils/MineBuffer";
-import Connection from "../Connection";
-import { MessageHandler } from "./Message";
+import Server from "../../../../../server/Server";
+import MineBuffer from "../../../../../utils/MineBuffer";
+import Connection, { ConnectionState } from "../../../../../server/Connection";
+import { MessageHandler } from "../../../Message";
 
 export class HandshakeMessageHandler extends MessageHandler {
-  public constructor(server: Server, state: number, id: number) {
+  public constructor(server: Server) {
     super({
-      state: state,
-      id: id,
+      state: ConnectionState.HANDSHAKE,
+      id: 0x00,
       label: "handshake",
       server: server,
     });
@@ -35,11 +35,17 @@ export class HandshakeMessageHandler extends MessageHandler {
     const serverPort = buffer.readUShort();
     const nextState = buffer.readVarInt();
 
+    if (nextState !== ConnectionState.STATUS && nextState !== ConnectionState.LOGIN) {
+      console.error(`[server/ERROR] ${player.remote}: Invalid nextState: ${nextState}. Disconnecting.`);
+      player.hardDisconnect();
+      return;
+    }
+
     player.clientProtocol = protocolVersion;
-    player.state = nextState; // TODO validate
-    const remote = `${serverAddress}:${serverPort}`;
-    const states: Record<number, string> = { 1: "status", 2: "login" };
-    const state = states[nextState];
-    console.log(`[server] handshake ${state} (server = ${remote}, protocol = ${protocolVersion}) from ${player.remote}`);
+    player.state = nextState;
+
+    const serverIP = `${serverAddress}:${serverPort}`;
+
+    console.log(`[server/DEBUG] ${player.remote}: handshake (server = ${serverIP}, protocol = ${protocolVersion}, nextState = ${nextState})`);
   }
 }

@@ -17,17 +17,17 @@
 import Server from "../../server/Server";
 import Player from "../../server/Player";
 import MineBuffer from "../../utils/MineBuffer";
-import Connection from "../Connection";
+import Connection, { ConnectionState } from "../../server/Connection";
 
 export interface MessageHandlerOptions {
-  state: number;
+  state: ConnectionState;
   id: number;
   label: string;
   server: Server;
 }
 
 export abstract class MessageHandler {
-  public readonly state: number;
+  public readonly state: ConnectionState;
   public readonly id: number;
   public readonly label: string;
   public readonly server: Server;
@@ -40,4 +40,9 @@ export abstract class MessageHandler {
   }
 
   public abstract handle(buffer: MineBuffer, player: Connection | Player): void;
+}
+
+export interface IClientboundMessage {
+  id: number;
+  encode(buffer: MineBuffer): void;
 }

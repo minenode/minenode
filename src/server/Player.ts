@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { EventEmitter } from "eventemitter3";
-import Connection from "../net/Connection";
+import Connection from "./Connection";
 import Server from "./Server";
 
 export default class Player extends EventEmitter {

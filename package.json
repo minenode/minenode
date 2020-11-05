@@ -4,6 +4,7 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "devDependencies": {
+    "@types/app-root-path": "^1.2.4",
     "@types/jest": "^26.0.15",
     "@types/long": "^4.0.1",
     "@types/node": "^14.14.6",
@@ -21,8 +22,10 @@
   },
   "dependencies": {
     "@minenode/wasm-java-random": "^0.0.3",
+    "app-root-path": "^3.0.0",
     "eventemitter3": "^4.0.7",
     "long": "^4.0.0",
+    "superstruct": "^0.10.12",
     "uuid": "^8.3.1"
   },
   "scripts": {
