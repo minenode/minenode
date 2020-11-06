@@ -20,6 +20,7 @@ import { ConnectionState } from "../../../../../server/Connection";
 import MineBuffer from "../../../../../utils/MineBuffer";
 import Connection from "../../../../../server/Connection";
 import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
+import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
 
 export class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -33,18 +34,17 @@ export class LoginStartMessage extends MessageHandler {
 
   public handle(buffer: MineBuffer, player: Connection): void {
     const username = buffer.readString();
-    // TODO: do something with username
     // TODO: validate username w/ regex
+    player.username = username;
 
     console.log(`[server/INFO] ${player.remote}: Login start for username '${username}'`);
 
     if (!player.clientProtocol) {
       return player.disconnect("Your client did not provide a protocol version.");
-    } else if (player.clientProtocol < 754) {
-      // TODO: config/constant
-      return player.disconnect(`Your client is outdated! Please update. (protocol ${player.clientProtocol}, expected 754)`);
-    } else if (player.clientProtocol > 754) {
-      return player.disconnect(`Your client is too new! (protocol ${player.clientProtocol}, expected 754)`);
+    } else if (player.clientProtocol < PROTOCOL_VERSION) {
+      return player.disconnect(`Your client is outdated! Server is on version ${GAME_VERSION}.`);
+    } else if (player.clientProtocol > PROTOCOL_VERSION) {
+      return player.disconnect(`Your client is too new! Server is on version ${GAME_VERSION}.`);
     }
 
     const response = new LoginEncryptionRequestMessage({

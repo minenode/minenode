@@ -26,6 +26,7 @@ import LoginSuccessMessage from "../clientbound/LoginSuccessMessage";
 import * as uuid from "uuid";
 import { PlaylientboundPositionAndLookMessage } from "../../play/clientbound/PlayClientboundPositionAndLookMessage";
 import PositionYP from "../../../../../utils/geometry/PositionYP";
+import { ChatColor } from "../../../../../utils/Chat";
 
 export class LoginEncryptionResponseMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -63,9 +64,15 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
 
     // TODO: auth
 
+    return player.disconnect(
+      `${ChatColor.AQUA}${ChatColor.BOLD}Welcome to MineNode, ${player.username}\n\n${ChatColor.RESET}` +
+        `${ChatColor.GREEN}Encryption & zlib Compression OK!\n${ChatColor.RESET}` +
+        `${ChatColor.WHITE}Using AES-128-CFB8 symmetric cipher`,
+    );
+
     player.disconnect({
       text: "Welcome to MineNode\n\n",
-      color: "cyan",
+      color: "aqua",
       extra: [
         {
           text: "Encryption & ZLIB Compression OK!\n",

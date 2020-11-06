@@ -17,6 +17,9 @@
 import Server from "./server/Server";
 
 const server = new Server({
-  compressionThreshold: -1,
+  compressionThreshold: 256,
+  motd: "A Minecraft Server",
+  maxPlayers: 5,
+  favicon: "server-icon.png",
 });
 server.start();

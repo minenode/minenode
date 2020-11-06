@@ -19,7 +19,7 @@ import * as uuid from "uuid";
 
 import BasicPosition3D from "./geometry/BasicPosition3D";
 import { IBasicPosition3D } from "./geometry/BasicPosition3D";
-import { Chat, isChat } from "./DataTypes";
+import { Chat, isChat } from "./Chat";
 
 /**
  * A wrapper around a Buffer offering dynamic size and support for Minecraft protocol types.

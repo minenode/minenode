@@ -21,7 +21,7 @@ import MineBuffer from "../utils/MineBuffer";
 import { IClientboundMessage } from "../net/protocol/Message";
 import EncryptionState from "./EncryptionState";
 import CompressionState from "./CompressionState";
-import { Chat } from "../utils/DataTypes";
+import { Chat, consoleFormatChat } from "../utils/Chat";
 import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
@@ -55,6 +55,7 @@ export default class Connection extends EventEmitter<{
   public clientProtocol?: number;
   public encryption: EncryptionState;
   public compression: CompressionState;
+  public username?: string;
 
   public constructor(socket: net.Socket) {
     super();
@@ -113,7 +114,7 @@ export default class Connection extends EventEmitter<{
   }
 
   public disconnect(reason: Chat): void {
-    console.log(`[server/WARN] ${this.remote}: disconnect called with reason: ${reason}`);
+    console.log(`[server/WARN] ${this.remote}: disconnect called with reason: ${consoleFormatChat(reason)}`);
     if (this.state === ConnectionState.HANDSHAKE || this.state === ConnectionState.STATUS) {
       this.hardDisconnect();
     } else if (this.state === ConnectionState.LOGIN) {

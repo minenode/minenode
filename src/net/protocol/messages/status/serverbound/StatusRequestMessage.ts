@@ -19,6 +19,8 @@ import MineBuffer from "../../../../../utils/MineBuffer";
 import Connection, { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../Message";
 import StatusResponseMessage from "../clientbound/StatusResponseMessage";
+import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
+import { formatChat } from "../../../../../utils/Chat";
 
 export class StatusRequestMessageHandler extends MessageHandler {
   public constructor(server: Server) {
@@ -33,24 +35,15 @@ export class StatusRequestMessageHandler extends MessageHandler {
   public handle(_buffer: MineBuffer, player: Connection): void {
     const response = new StatusResponseMessage({
       version: {
-        name: "MineNode 1.16.4",
-        protocol: 754,
+        name: GAME_VERSION,
+        protocol: PROTOCOL_VERSION,
       },
       players: {
-        max: 420,
-        online: 69,
-        sample: [],
+        max: this.server.options.maxPlayers,
+        online: [...this.server.connections].filter(conn => conn.state === ConnectionState.PLAY).length, // TODO: this should be players, not connections
+        sample: [], // TODO
       },
-      description: {
-        text: "Current time: ",
-        color: "white",
-        extra: [
-          {
-            text: new Date().toString(),
-            color: "gold",
-          },
-        ],
-      },
+      description: formatChat(this.server.options.motd, "&"),
       favicon: this.server.encodedFavicon,
     });
     player.writeMessage(response);

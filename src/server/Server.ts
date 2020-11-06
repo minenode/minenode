@@ -26,6 +26,9 @@ import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactor
 
 export interface ServerOptions {
   compressionThreshold: number;
+  motd: string;
+  maxPlayers: number;
+  favicon?: string;
 }
 
 export default class Server extends EventEmitter {
@@ -53,19 +56,22 @@ export default class Server extends EventEmitter {
   }
 
   protected loadServerIcon(): void {
-    // TODO: this path should be passed as part of config
-    const serverIconPath = path.resolve(appRootPath.path, "server-icon.png");
+    if (!this.options.favicon) {
+      console.log("[server/INFO] no server icon was set");
+      return;
+    }
+    const serverIconPath = path.resolve(appRootPath.path, this.options.favicon);
     if (fs.existsSync(serverIconPath) && fs.statSync(serverIconPath).isFile()) {
-      if (fs.statSync(serverIconPath).size > 1024 * 1024) {
-        console.error("[server/ERROR] server-icon.png is too large. Cannot exceed 1 MB.");
+      if (fs.statSync(serverIconPath).size > (65535 * 3) / 4) {
+        console.error(`[server/ERROR] ${serverIconPath} is too large. Cannot exceed ${(65535 * 3) / 4} bytes.`);
         return;
       } else {
         const raw = fs.readFileSync(serverIconPath);
         this.encodedFavicon = "data:image/png;base64," + raw.toString("base64");
-        console.log(`[server/INFO] loaded favicon from server-icon.png (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
+        console.log(`[server/INFO] loaded favicon from ${serverIconPath} (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
       }
     } else {
-      console.log("[server/INFO] server-icon.png does not exist");
+      console.log(`[server/INFO] ${serverIconPath} does not exist`);
     }
   }
 

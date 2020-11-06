@@ -1,4 +1,4 @@
-// LoginDisconnectMessage.ts - creates Login Disconnect messages
+// Constants.ts - stores program-wide constant values
 // Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,16 +14,5 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { IClientboundMessage } from "../../../Message";
-import { Chat } from "../../../../../utils/Chat";
-import MineBuffer from "../../../../../utils/MineBuffer";
-
-export default class LoginDisconnectMessage implements IClientboundMessage {
-  public id = 0x00;
-
-  public constructor(public reason: Chat) {}
-
-  public encode(buffer: MineBuffer): void {
-    buffer.writeChat(this.reason);
-  }
-}
+export const PROTOCOL_VERSION = 754;
+export const GAME_VERSION = "1.16.4";
