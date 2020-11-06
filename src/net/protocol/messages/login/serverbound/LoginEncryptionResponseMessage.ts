@@ -55,11 +55,11 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
     }
 
     player.encryption.initialize(decryptedSharedSecret);
-    player.encryptionEnabled = true;
+    player.encryption.enabled = true;
 
     const compressionResponse = new LoginSetCompressionMessage(this.server.options.compressionThreshold);
     player.writeMessage(compressionResponse);
-    player.compression = true;
+    player.compression.enabled = true;
 
     // TODO: auth
 

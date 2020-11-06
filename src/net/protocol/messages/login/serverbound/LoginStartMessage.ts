@@ -19,7 +19,7 @@ import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
 import MineBuffer from "../../../../../utils/MineBuffer";
 import Connection from "../../../../../server/Connection";
-import LoginEncryptionRequestMessage from "../clientbound/LoginEncrpytionRequestMessage";
+import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
 
 export class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {

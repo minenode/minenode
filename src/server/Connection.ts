@@ -15,13 +15,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import * as net from "net";
-import * as zlib from "zlib";
 
 import { EventEmitter } from "eventemitter3";
 import MineBuffer from "../utils/MineBuffer";
 import { IClientboundMessage } from "../net/protocol/Message";
 import EncryptionState from "./EncryptionState";
-import Server from "./Server";
+import CompressionState from "./CompressionState";
 import { Chat } from "../utils/DataTypes";
 import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
 
@@ -52,21 +51,19 @@ export default class Connection extends EventEmitter<{
   public socket: net.Socket;
   public remote: string;
   public buffer: MineBuffer = new MineBuffer();
-  public compression = false;
   public state = ConnectionState.HANDSHAKE;
   public clientProtocol?: number;
   public encryption: EncryptionState;
-  public encryptionEnabled = false;
-  public server: Server;
+  public compression: CompressionState;
 
-  public constructor(server: Server, socket: net.Socket) {
+  public constructor(socket: net.Socket) {
     super();
 
-    this.server = server;
     this.socket = socket;
     this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
 
-    this.encryption = new EncryptionState(this.server.keypair);
+    this.encryption = new EncryptionState();
+    this.compression = new CompressionState();
 
     // Bind events - close, data, error
     this.socket.on("close", this._onClose.bind(this));
@@ -84,23 +81,27 @@ export default class Connection extends EventEmitter<{
   public write(packetID: number, payload: MineBuffer): void {
     let buffer = new MineBuffer();
     buffer.writeVarInt(packetID);
-    buffer.writeBytes(payload.readBytes(payload.remaining));
+    buffer.writeBytes(payload.readRemaining());
 
-    // TODO: this doesn't seem to be working when the compression threshold is set (try 128)
-    if (this.compression && this.server.options.compressionThreshold > 0 && payload.remaining >= this.server.options.compressionThreshold) {
+    if (this.compression.enabled && this.compression.threshold > 0) {
       const data = new MineBuffer();
-      data.writeVarInt(buffer.remaining);
-      data.writeBytes(zlib.deflateSync(buffer.readBytes(buffer.remaining)));
+      if (buffer.remaining >= this.compression.threshold) {
+        data.writeVarInt(buffer.remaining);
+        data.writeBytes(this.compression.decompress(buffer.readRemaining()));
+      } else {
+        data.writeVarInt(0);
+        data.writeBytes(buffer.readRemaining());
+      }
       buffer = data;
     }
 
     const data = new MineBuffer();
     data.writeVarInt(buffer.remaining);
-    data.writeBytes(buffer.readBytes(buffer.remaining));
+    data.writeBytes(buffer.readRemaining());
 
-    let finalBuffer = data.readBytes(data.remaining);
+    let finalBuffer = data.readRemaining();
 
-    if (this.encryptionEnabled) {
+    if (this.encryption.enabled) {
       finalBuffer = this.encryption.updateCipher(finalBuffer);
     }
 
@@ -135,7 +136,7 @@ export default class Connection extends EventEmitter<{
       throw new RangeError("packet size too large");
     }
 
-    if (this.encryptionEnabled) {
+    if (this.encryption.enabled) {
       data = this.encryption.updateDecipher(data);
     }
 
@@ -156,10 +157,10 @@ export default class Connection extends EventEmitter<{
         throw e;
       }
 
-      if (this.compression && this.server.options.compressionThreshold > 0) {
+      if (this.compression.enabled && this.compression.threshold > 0) {
         const dataLength = payload.readVarInt();
         if (dataLength !== 0) {
-          payload = new MineBuffer(zlib.inflateSync(payload.readBytes(payload.remaining)));
+          payload = new MineBuffer(this.compression.compress(payload.readRemaining()));
           if (dataLength !== payload.remaining) {
             throw new RangeError("uncompressed length does not match");
           }
@@ -170,7 +171,7 @@ export default class Connection extends EventEmitter<{
       this.emit("message", { packetID, payload });
     }
 
-    this.buffer = new MineBuffer(this.buffer.readBytes(this.buffer.remaining));
+    this.buffer = new MineBuffer(this.buffer.readRemaining());
   }
 
   protected _onError(error: unknown): void {

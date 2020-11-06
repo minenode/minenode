@@ -78,7 +78,10 @@ export default class Server extends EventEmitter {
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
-    const connection = new Connection(this, socket);
+    const connection = new Connection(socket);
+    connection.encryption.setKeypair(this.keypair);
+    connection.compression.setThreshold(this.options.compressionThreshold);
+
     console.log(`[server/INFO] ${connection.remote}: connected`);
     this.connections.add(connection);
 

@@ -94,6 +94,13 @@ export default class MineBuffer {
   }
 
   /**
+   * Reads remaining bytes from the buffer.
+   */
+  public readRemaining(): Buffer {
+    return this.readBytes(this.remaining);
+  }
+
+  /**
    * Reads a byte (signed) from the buffer.
    * @throws {RangeError} if the buffer is exhausted.
    */

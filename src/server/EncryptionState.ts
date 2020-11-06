@@ -19,11 +19,15 @@ import * as crypto from "crypto";
 export default class EncryptionState {
   public verifyToken: Buffer = crypto.randomBytes(4);
 
+  public serverKeypair?: crypto.KeyPairKeyObjectResult;
   public sharedSecret?: Buffer;
   public cipher?: crypto.Cipher;
   public decipher?: crypto.Decipher;
+  public enabled = false;
 
-  public constructor(public serverKeypair: crypto.KeyPairKeyObjectResult) {}
+  public setKeypair(serverKeypair: crypto.KeyPairKeyObjectResult): void {
+    this.serverKeypair = serverKeypair;
+  }
 
   public initialize(sharedSecret: Buffer): void {
     if (sharedSecret.length !== 16) {
