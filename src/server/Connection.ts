@@ -20,6 +20,10 @@ import * as zlib from "zlib";
 import { EventEmitter } from "eventemitter3";
 import MineBuffer from "../utils/MineBuffer";
 import { IClientboundMessage } from "../net/protocol/Message";
+import EncryptionState from "./EncryptionState";
+import Server from "./Server";
+import { Chat } from "../utils/DataTypes";
+import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
 
@@ -51,16 +55,32 @@ export default class Connection extends EventEmitter<{
   public compression = false;
   public state = ConnectionState.HANDSHAKE;
   public clientProtocol?: number;
+  public encryption?: EncryptionState;
+  public encryptionEnabled = false;
+  public server: Server;
 
-  public constructor(socket: net.Socket) {
+  public constructor(server: Server, socket: net.Socket) {
     super();
+
+    this.server = server;
     this.socket = socket;
     this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
+
+    if (this.server.options.encryption && this.server.keypair) {
+      this.encryption = new EncryptionState(this.server.keypair);
+    }
 
     // Bind events - close, data, error
     this.socket.on("close", this._onClose.bind(this));
     this.socket.on("data", this._onData.bind(this));
     this.socket.on("error", this._onError.bind(this));
+  }
+
+  public enableEncryption(): void {
+    if (!this.encryption) {
+      throw new Error("Cannot enable connection encryption without encryption enabled on server");
+    }
+    this.encryptionEnabled = true;
   }
 
   public writeMessage(message: IClientboundMessage): void {
@@ -84,11 +104,32 @@ export default class Connection extends EventEmitter<{
     const data = new MineBuffer();
     data.writeVarInt(buffer.remaining);
     data.writeBytes(buffer.readBytes(buffer.remaining));
-    this.socket.write(data.readBytes(data.remaining));
+
+    let finalBuffer = data.readBytes(data.remaining);
+
+    if (this.encryptionEnabled && this.encryption) {
+      finalBuffer = this.encryption.updateCipher(finalBuffer);
+    }
+
+    this.socket.write(finalBuffer);
   }
 
   public hardDisconnect(): void {
     this.socket.destroy();
+  }
+
+  public disconnect(reason: Chat): void {
+    console.log(`[server/WARN] ${this.remote}: disconnect called with reason: ${reason}`);
+    if (this.state === ConnectionState.HANDSHAKE || this.state === ConnectionState.STATUS) {
+      this.hardDisconnect();
+    } else if (this.state === ConnectionState.LOGIN) {
+      const msg = new LoginDisconnectMessage(reason);
+      this.writeMessage(msg);
+      this.socket.end(); // async
+    } else if (this.state === ConnectionState.PLAY) {
+      // TODO
+      this.hardDisconnect();
+    }
   }
 
   protected _onClose(/* hadError = false */): void {
@@ -99,6 +140,10 @@ export default class Connection extends EventEmitter<{
   protected _onData(data: Buffer): void {
     if (data.length > MAX_PACKET_SIZE) {
       throw new RangeError("packet size too large");
+    }
+
+    if (this.encryptionEnabled && this.encryption) {
+      data = this.encryption.updateDecipher(data);
     }
 
     this.buffer.writeBytes(data);

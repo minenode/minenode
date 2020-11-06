@@ -1,4 +1,4 @@
-// LoginDisconnectMessage.ts - creates Login Disconnect messages
+// LoginEncryptionRequestMessage.ts - creates Login Encryption Request messages
 // Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,15 +15,27 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../Message";
-import { Chat } from "../../../../../utils/DataTypes";
 import MineBuffer from "../../../../../utils/MineBuffer";
 
-export default class LoginDisconnectMessage implements IClientboundMessage {
-  public id = 0x00;
+export default class LoginEncryptionRequestMessage implements IClientboundMessage {
+  public id = 0x01;
 
-  public constructor(public reason: Chat) {}
+  public serverID: string;
+  public publicKey: Buffer;
+  public verifyToken: Buffer;
+
+  public constructor(options: { serverID: string; publicKey: Buffer; verifyToken: Buffer }) {
+    this.serverID = options.serverID;
+    this.publicKey = options.publicKey;
+    this.verifyToken = options.verifyToken;
+  }
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeChat(this.reason);
+    buffer
+      .writeString(this.serverID)
+      .writeVarInt(this.publicKey.length)
+      .writeBytes(this.publicKey)
+      .writeVarInt(this.verifyToken.length)
+      .writeBytes(this.verifyToken);
   }
 }

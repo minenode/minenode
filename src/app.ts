@@ -16,5 +16,7 @@
 
 import Server from "./server/Server";
 
-const server = new Server();
+const server = new Server({
+  encryption: true,
+});
 server.start();

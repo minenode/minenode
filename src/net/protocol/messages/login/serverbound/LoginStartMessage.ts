@@ -1,0 +1,43 @@
+// LoginStartMessage.ts - handle Login Start messages
+// Copyright (C) 2020 MineNode
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import { MessageHandler } from "../../../Message";
+import Server from "../../../../../server/Server";
+import { ConnectionState } from "../../../../../server/Connection";
+import MineBuffer from "../../../../../utils/MineBuffer";
+import Connection from "../../../../../server/Connection";
+
+export class LoginStartMessage extends MessageHandler {
+  public constructor(server: Server) {
+    super({
+      state: ConnectionState.LOGIN,
+      id: 0x00,
+      label: "login start",
+      server,
+    });
+  }
+
+  public handle(buffer: MineBuffer, player: Connection): void {
+    const username = buffer.readString();
+    // TODO: do something with username
+    // TODO: validate username w/ regex
+    console.log(`[server/INFO] ${player.remote}: Login start for username '${username}'`);
+    if (player.clientProtocol !== 754) {
+      // TODO: config/constant
+      player.disconnect(`Your client is outdated! Please update. (protocol ${player.clientProtocol}, expected 754)`);
+    }
+  }
+}

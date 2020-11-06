@@ -18,10 +18,15 @@ import { EventEmitter } from "eventemitter3";
 import * as net from "net";
 import * as fs from "fs";
 import * as path from "path";
+import * as crypto from "crypto";
 import * as appRootPath from "app-root-path";
 
 import Connection, { getConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
+
+export interface ServerOptions {
+  encryption: boolean;
+}
 
 export default class Server extends EventEmitter {
   public tcpServer: net.Server = new net.Server();
@@ -29,10 +34,9 @@ export default class Server extends EventEmitter {
   public handlerFactory: MessageHandlerFactory;
 
   public encodedFavicon?: string;
+  public keypair?: crypto.KeyPairKeyObjectResult;
 
-  // TODO: options
-
-  public constructor() {
+  public constructor(public readonly options: Readonly<ServerOptions>) {
     super();
 
     // Bind events
@@ -41,7 +45,14 @@ export default class Server extends EventEmitter {
     this.handlerFactory = new MessageHandlerFactory(this);
   }
 
-  public loadServerIcon(): void {
+  protected generateKeyPair(): void {
+    this.keypair = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 1024,
+    });
+    console.log("[server/INFO] generated RSA keypair, 1024-bit modulus");
+  }
+
+  protected loadServerIcon(): void {
     // TODO: this path should be passed as part of config
     const serverIconPath = path.resolve(appRootPath.path, "server-icon.png");
     if (fs.existsSync(serverIconPath) && fs.statSync(serverIconPath).isFile()) {
@@ -51,7 +62,7 @@ export default class Server extends EventEmitter {
       } else {
         const raw = fs.readFileSync(serverIconPath);
         this.encodedFavicon = "data:image/png;base64," + raw.toString("base64");
-        console.log(`[server/DEBUG] loaded favicon from server-icon.png (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
+        console.log(`[server/INFO] loaded favicon from server-icon.png (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
       }
     } else {
       console.log("[server/INFO] server-icon.png does not exist");
@@ -60,13 +71,14 @@ export default class Server extends EventEmitter {
 
   public start(): void {
     this.loadServerIcon();
+    if (this.options.encryption) this.generateKeyPair();
     // TODO: config in constructor
     this.tcpServer.listen(25565, "0.0.0.0");
     console.log(`[server/INFO] server listening`);
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
-    const connection = new Connection(socket);
+    const connection = new Connection(this, socket);
     console.log(`[server/INFO] ${connection.remote}: connected`);
     this.connections.add(connection);
 

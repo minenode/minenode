@@ -1,4 +1,4 @@
-// LoginDisconnectMessage.ts - creates Login Disconnect messages
+// LoginSetCompressionMessage.ts - creates Login Set Compression messages
 // Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,15 +15,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../Message";
-import { Chat } from "../../../../../utils/DataTypes";
 import MineBuffer from "../../../../../utils/MineBuffer";
 
-export default class LoginDisconnectMessage implements IClientboundMessage {
-  public id = 0x00;
+export default class LoginSetCompressionMessage implements IClientboundMessage {
+  public id = 0x03;
 
-  public constructor(public reason: Chat) {}
+  public constructor(public threshold: number) {}
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeChat(this.reason);
+    buffer.writeVarInt(this.threshold);
   }
 }
