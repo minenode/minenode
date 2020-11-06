@@ -30,6 +30,7 @@ if (!fs.existsSync(configFilePath)) {
       compressionThreshold: 256,
       motd: "A Minecraft Server",
       maxPlayers: 5,
+      favicon: "",
     }),
     "utf8",
   );
@@ -43,6 +44,7 @@ assert(
     compressionThreshold: number(),
     motd: string(),
     maxPlayers: number(),
+    favicon: string(),
   }),
 );
 
