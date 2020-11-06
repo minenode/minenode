@@ -16,10 +16,35 @@
 
 import Server from "./server/Server";
 
-const server = new Server({
-  compressionThreshold: 256,
-  motd: "A Minecraft Server",
-  maxPlayers: 5,
-  favicon: "server-icon.png",
-});
+import * as fs from "fs";
+import * as path from "path";
+import * as yaml from "js-yaml";
+import * as appRoot from "app-root-path";
+import { assert, object, number, string } from "superstruct";
+
+const configFilePath = path.resolve(appRoot.path, "config.yml");
+if (!fs.existsSync(configFilePath)) {
+  fs.writeFileSync(
+    configFilePath,
+    yaml.safeDump({
+      compressionThreshold: 256,
+      motd: "A Minecraft Server",
+      maxPlayers: 5,
+    }),
+    "utf8",
+  );
+}
+const configRaw = fs.readFileSync(configFilePath, "utf8");
+const config = yaml.safeLoad(configRaw);
+
+assert(
+  config,
+  object({
+    compressionThreshold: number(),
+    motd: string(),
+    maxPlayers: number(),
+  }),
+);
+
+const server = new Server(config);
 server.start();

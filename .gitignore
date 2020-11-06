@@ -3,3 +3,4 @@ dist/
 *.log
 package-lock.json
 server-icon.png
+config.yml
