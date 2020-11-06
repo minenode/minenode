@@ -24,7 +24,9 @@
     "@minenode/wasm-java-random": "^0.0.3",
     "app-root-path": "^3.0.0",
     "eventemitter3": "^4.0.7",
+    "got": "^11.8.0",
     "long": "^4.0.0",
+    "nbt": "^0.8.1",
     "superstruct": "^0.10.12",
     "uuid": "^8.3.1"
   },

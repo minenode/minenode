@@ -19,6 +19,7 @@ import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
 import MineBuffer from "../../../../../utils/MineBuffer";
 import Connection from "../../../../../server/Connection";
+import LoginEncryptionRequestMessage from "../clientbound/LoginEncrpytionRequestMessage";
 
 export class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -34,10 +35,27 @@ export class LoginStartMessage extends MessageHandler {
     const username = buffer.readString();
     // TODO: do something with username
     // TODO: validate username w/ regex
+
     console.log(`[server/INFO] ${player.remote}: Login start for username '${username}'`);
-    if (player.clientProtocol !== 754) {
+
+    if (!player.clientProtocol) {
+      return player.disconnect("Your client did not provide a protocol version.");
+    } else if (player.clientProtocol < 754) {
       // TODO: config/constant
-      player.disconnect(`Your client is outdated! Please update. (protocol ${player.clientProtocol}, expected 754)`);
+      return player.disconnect(`Your client is outdated! Please update. (protocol ${player.clientProtocol}, expected 754)`);
+    } else if (player.clientProtocol > 754) {
+      return player.disconnect(`Your client is too new! (protocol ${player.clientProtocol}, expected 754)`);
     }
+
+    const response = new LoginEncryptionRequestMessage({
+      serverID: "",
+      publicKey: this.server.keypair.publicKey.export({
+        format: "der",
+        type: "spki",
+      }),
+      verifyToken: player.encryption.verifyToken,
+    });
+
+    player.writeMessage(response);
   }
 }

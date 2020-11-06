@@ -25,7 +25,7 @@ import Connection, { getConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
 
 export interface ServerOptions {
-  encryption: boolean;
+  compressionThreshold: number;
 }
 
 export default class Server extends EventEmitter {
@@ -34,7 +34,7 @@ export default class Server extends EventEmitter {
   public handlerFactory: MessageHandlerFactory;
 
   public encodedFavicon?: string;
-  public keypair?: crypto.KeyPairKeyObjectResult;
+  public keypair!: crypto.KeyPairKeyObjectResult;
 
   public constructor(public readonly options: Readonly<ServerOptions>) {
     super();
@@ -71,7 +71,7 @@ export default class Server extends EventEmitter {
 
   public start(): void {
     this.loadServerIcon();
-    if (this.options.encryption) this.generateKeyPair();
+    this.generateKeyPair();
     // TODO: config in constructor
     this.tcpServer.listen(25565, "0.0.0.0");
     console.log(`[server/INFO] server listening`);
@@ -94,7 +94,12 @@ export default class Server extends EventEmitter {
       const handler = this.handlerFactory.getHandler(msg.packetID, connection.state);
 
       if (handler) {
-        handler.handle(msg.payload, connection);
+        try {
+          handler.handle(msg.payload, connection);
+        } catch (err) {
+          console.error(err);
+          connection.disconnect({ text: String(err), color: "red" });
+        }
         console.log(`[server/DEBUG] ${connection.remote}: message '${handler.label}' handled`);
       } else {
         // TODO handle

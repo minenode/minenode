@@ -17,7 +17,7 @@
 import * as crypto from "crypto";
 
 export default class EncryptionState {
-  public verifyToken: Buffer = crypto.randomBytes(10);
+  public verifyToken: Buffer = crypto.randomBytes(4);
 
   public sharedSecret?: Buffer;
   public cipher?: crypto.Cipher;
@@ -30,8 +30,8 @@ export default class EncryptionState {
       throw new Error("shared secret must be exactly 16 bytes");
     }
     this.sharedSecret = sharedSecret.slice();
-    this.cipher = crypto.createCipheriv("aes-256-cfb", this.sharedSecret, this.sharedSecret);
-    this.decipher = crypto.createDecipheriv("aes-256-cfb", this.sharedSecret, this.sharedSecret);
+    this.cipher = crypto.createCipheriv("aes-128-cfb8", this.sharedSecret, this.sharedSecret);
+    this.decipher = crypto.createDecipheriv("aes-128-cfb8", this.sharedSecret, this.sharedSecret);
   }
 
   public updateCipher(data: Buffer): Buffer {

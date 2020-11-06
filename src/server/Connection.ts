@@ -55,7 +55,7 @@ export default class Connection extends EventEmitter<{
   public compression = false;
   public state = ConnectionState.HANDSHAKE;
   public clientProtocol?: number;
-  public encryption?: EncryptionState;
+  public encryption: EncryptionState;
   public encryptionEnabled = false;
   public server: Server;
 
@@ -66,9 +66,7 @@ export default class Connection extends EventEmitter<{
     this.socket = socket;
     this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
 
-    if (this.server.options.encryption && this.server.keypair) {
-      this.encryption = new EncryptionState(this.server.keypair);
-    }
+    this.encryption = new EncryptionState(this.server.keypair);
 
     // Bind events - close, data, error
     this.socket.on("close", this._onClose.bind(this));
@@ -76,16 +74,10 @@ export default class Connection extends EventEmitter<{
     this.socket.on("error", this._onError.bind(this));
   }
 
-  public enableEncryption(): void {
-    if (!this.encryption) {
-      throw new Error("Cannot enable connection encryption without encryption enabled on server");
-    }
-    this.encryptionEnabled = true;
-  }
-
   public writeMessage(message: IClientboundMessage): void {
     const buffer = new MineBuffer();
     message.encode(buffer);
+    console.log(`[server/DEBUG] ${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
     this.write(message.id, buffer);
   }
 
@@ -94,10 +86,11 @@ export default class Connection extends EventEmitter<{
     buffer.writeVarInt(packetID);
     buffer.writeBytes(payload.readBytes(payload.remaining));
 
-    if (this.compression) {
+    // TODO: this doesn't seem to be working when the compression threshold is set (try 128)
+    if (this.compression && this.server.options.compressionThreshold > 0 && payload.remaining >= this.server.options.compressionThreshold) {
       const data = new MineBuffer();
       data.writeVarInt(buffer.remaining);
-      data.writeBytes(zlib.gzipSync(buffer.readBytes(buffer.remaining)));
+      data.writeBytes(zlib.deflateSync(buffer.readBytes(buffer.remaining)));
       buffer = data;
     }
 
@@ -107,7 +100,7 @@ export default class Connection extends EventEmitter<{
 
     let finalBuffer = data.readBytes(data.remaining);
 
-    if (this.encryptionEnabled && this.encryption) {
+    if (this.encryptionEnabled) {
       finalBuffer = this.encryption.updateCipher(finalBuffer);
     }
 
@@ -142,7 +135,7 @@ export default class Connection extends EventEmitter<{
       throw new RangeError("packet size too large");
     }
 
-    if (this.encryptionEnabled && this.encryption) {
+    if (this.encryptionEnabled) {
       data = this.encryption.updateDecipher(data);
     }
 
@@ -163,10 +156,10 @@ export default class Connection extends EventEmitter<{
         throw e;
       }
 
-      if (this.compression) {
+      if (this.compression && this.server.options.compressionThreshold > 0) {
         const dataLength = payload.readVarInt();
         if (dataLength !== 0) {
-          payload = new MineBuffer(zlib.gunzipSync(payload.readBytes(payload.remaining)));
+          payload = new MineBuffer(zlib.inflateSync(payload.readBytes(payload.remaining)));
           if (dataLength !== payload.remaining) {
             throw new RangeError("uncompressed length does not match");
           }

@@ -1,4 +1,4 @@
-// app.ts - Main CLI entrypoint for the server
+// PositionYP.ts - represents a basic X/Y/Z cartesian position along with yaw and pitch.
 // Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,9 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "./server/Server";
+import BasicPosition3D from "./BasicPosition3D";
 
-const server = new Server({
-  compressionThreshold: -1,
-});
-server.start();
+export default class PositionYP extends BasicPosition3D {
+  public yaw: number;
+  public pitch: number;
+
+  public constructor(x = 0, y = 0, z = 0, yaw = 0, pitch = 0) {
+    super(x, y, z);
+    this.yaw = yaw;
+    this.pitch = pitch;
+  }
+}

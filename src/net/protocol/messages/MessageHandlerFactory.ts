@@ -22,6 +22,7 @@ import { HandshakeMessageHandler } from "./handshake/serverbound/HandshakeMessag
 import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage";
 import { StatusRequestMessageHandler } from "./status/serverbound/StatusRequestMessage";
 import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
+import { LoginEncryptionResponseMessage } from "./login/serverbound/LoginEncryptionResponseMessage";
 
 export default class MessageHandlerFactory {
   public readonly registered: Set<MessageHandler> = new Set();
@@ -31,6 +32,7 @@ export default class MessageHandlerFactory {
       .add(new HandshakeMessageHandler(this.server))
       .add(new StatusPingMessageHandler(this.server))
       .add(new StatusRequestMessageHandler(this.server))
+      .add(new LoginEncryptionResponseMessage(this.server))
       .add(new LoginStartMessage(this.server));
   }
 

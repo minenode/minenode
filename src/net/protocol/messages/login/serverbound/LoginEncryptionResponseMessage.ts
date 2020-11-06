@@ -21,6 +21,11 @@ import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
 import MineBuffer from "../../../../../utils/MineBuffer";
 import Connection from "../../../../../server/Connection";
+import LoginSetCompressionMessage from "../clientbound/LoginSetCompressionMessage";
+import LoginSuccessMessage from "../clientbound/LoginSuccessMessage";
+import * as uuid from "uuid";
+import { PlaylientboundPositionAndLookMessage } from "../../play/clientbound/PlayClientboundPositionAndLookMessage";
+import PositionYP from "../../../../../utils/geometry/PositionYP";
 
 export class LoginEncryptionResponseMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -33,10 +38,6 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
   }
 
   public handle(buffer: MineBuffer, player: Connection): void {
-    if (!this.server.options.encryption || !this.server.keypair || !player.encryption) {
-      throw new Error("Login encryption cannot be processed without encryption keys");
-    }
-
     const sharedSecretLength = buffer.readVarInt();
     const sharedSecret = buffer.readBytes(sharedSecretLength);
     const verifyTokenLengh = buffer.readVarInt();
@@ -44,15 +45,59 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
 
     // Verify verifyToken
 
-    const decryptedSharedSecret = crypto.publicDecrypt(this.server.keypair.publicKey, sharedSecret);
-    const decryptedVerifyToken = crypto.publicDecrypt(this.server.keypair.publicKey, verifyToken);
+    const decryptedSharedSecret = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, sharedSecret);
+    const decryptedVerifyToken = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, verifyToken);
 
     if (!decryptedVerifyToken.equals(player.encryption.verifyToken)) {
       // Invalid
       console.error(`[server/ERROR] ${player.remote}: Verify token mismatch`);
-      player.disconnect("Verify token mismatch");
-    } else {
-      player.encryption.sharedSecret = decryptedSharedSecret;
+      return player.disconnect("Verify token mismatch");
     }
+
+    player.encryption.initialize(decryptedSharedSecret);
+    player.encryptionEnabled = true;
+
+    const compressionResponse = new LoginSetCompressionMessage(this.server.options.compressionThreshold);
+    player.writeMessage(compressionResponse);
+    player.compression = true;
+
+    // TODO: auth
+
+    player.disconnect({
+      text: "Welcome to MineNode\n\n",
+      color: "cyan",
+      extra: [
+        {
+          text: "Encryption & ZLIB Compression OK!\n",
+          color: "green",
+        },
+        {
+          text: `Using AES-128-CFB8 symmetric cipher with shared secret: ${player.encryption.sharedSecret?.toString("hex")}\n\n`,
+          color: "white",
+        },
+        {
+          text: "TODO: Authentication (toggleable)",
+          color: "yellow",
+        },
+      ],
+    });
+    return;
+
+    // TODO: Join Game (requires NBT)
+
+    const successResponse = new LoginSuccessMessage(uuid.v1(), Date.now().toString(32));
+    player.writeMessage(successResponse);
+
+    const posResponse = new PlaylientboundPositionAndLookMessage({
+      position: new PositionYP(0, 1, 0, 0, 0),
+      flags: {
+        x: false,
+        y: false,
+        z: false,
+        y_rot: false,
+        x_rot: false,
+      },
+    });
+    player.writeMessage(posResponse);
   }
 }

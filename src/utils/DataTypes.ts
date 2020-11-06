@@ -68,3 +68,11 @@ export function isChat(obj: unknown): obj is Chat {
 
   return is(obj, ChatSchema);
 }
+
+export enum GameMode {
+  NONE = -1,
+  SURVIVAL = 0,
+  CREATIVE = 1,
+  ADVENTURE = 2,
+  SPECTATOR = 3,
+}
