@@ -39,14 +39,14 @@ export class StatusRequestMessageHandler extends MessageHandler {
         protocol: PROTOCOL_VERSION,
       },
       players: {
-        max: this.server.options.maxPlayers,
+        max: this.server.config.maxPlayers,
         online: [...this.server.connections].filter(conn => conn.state === ConnectionState.PLAY).length, // TODO: this should be players, not connections
         sample: [], // TODO
       },
-      description: formatChat(this.server.options.motd, "&"),
+      description: formatChat(this.server.config.motd, "&"),
       favicon: this.server.encodedFavicon,
     });
     player.writeMessage(response);
-    console.log(`[server/DEBUG] ${player.remote}: status request`);
+    this.server.logger.debug(`${player.remote}: status request`);
   }
 }

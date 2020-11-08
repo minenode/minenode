@@ -23,6 +23,8 @@ import EncryptionState from "./EncryptionState";
 import CompressionState from "./CompressionState";
 import { Chat, consoleFormatChat } from "../utils/Chat";
 import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
+import Server from "./Server";
+import { inspect } from "util";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
 
@@ -56,9 +58,12 @@ export default class Connection extends EventEmitter<{
   public encryption: EncryptionState;
   public compression: CompressionState;
   public username?: string;
+  public server: Server;
 
-  public constructor(socket: net.Socket) {
+  public constructor(server: Server, socket: net.Socket) {
     super();
+
+    this.server = server;
 
     this.socket = socket;
     this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
@@ -75,7 +80,7 @@ export default class Connection extends EventEmitter<{
   public writeMessage(message: IClientboundMessage): void {
     const buffer = new MineBuffer();
     message.encode(buffer);
-    console.log(`[server/DEBUG] ${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
+    this.server.logger.debug(`${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
     this.write(message.id, buffer);
   }
 
@@ -114,7 +119,7 @@ export default class Connection extends EventEmitter<{
   }
 
   public disconnect(reason: Chat): void {
-    console.log(`[server/WARN] ${this.remote}: disconnect called with reason: ${consoleFormatChat(reason)}`);
+    this.server.logger.warn(`${this.remote}: disconnect called with reason: ${consoleFormatChat(reason).replace(/\n/g, "\u23CE")}`);
     if (this.state === ConnectionState.HANDSHAKE || this.state === ConnectionState.STATUS) {
       this.hardDisconnect();
     } else if (this.state === ConnectionState.LOGIN) {
@@ -176,7 +181,7 @@ export default class Connection extends EventEmitter<{
   }
 
   protected _onError(error: unknown): void {
-    console.error(error);
+    this.server.logger.error(inspect(error));
     // TODO
   }
 }

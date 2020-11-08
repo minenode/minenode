@@ -51,14 +51,14 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
 
     if (!decryptedVerifyToken.equals(player.encryption.verifyToken)) {
       // Invalid
-      console.error(`[server/ERROR] ${player.remote}: Verify token mismatch`);
+      this.server.logger.error(`${player.remote}: Verify token mismatch`);
       return player.disconnect("Verify token mismatch");
     }
 
     player.encryption.initialize(decryptedSharedSecret);
     player.encryption.enabled = true;
 
-    const compressionResponse = new LoginSetCompressionMessage(this.server.options.compressionThreshold);
+    const compressionResponse = new LoginSetCompressionMessage(this.server.config.compressionThreshold);
     player.writeMessage(compressionResponse);
     player.compression.enabled = true;
 

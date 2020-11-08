@@ -21,19 +21,20 @@ import * as path from "path";
 import * as yaml from "js-yaml";
 import * as appRoot from "app-root-path";
 import { assert, object, number, string } from "superstruct";
+import { ServerConfig } from "./server/Server";
+
+const defaultConfig: ServerConfig = {
+  compressionThreshold: 256,
+  motd: "A Minecraft Server",
+  maxPlayers: 5,
+  favicon: "",
+  host: "0.0.0.0",
+  port: 25565,
+};
 
 const configFilePath = path.resolve(appRoot.path, "config.yml");
 if (!fs.existsSync(configFilePath)) {
-  fs.writeFileSync(
-    configFilePath,
-    yaml.safeDump({
-      compressionThreshold: 256,
-      motd: "A Minecraft Server",
-      maxPlayers: 5,
-      favicon: "",
-    }),
-    "utf8",
-  );
+  fs.writeFileSync(configFilePath, yaml.safeDump(defaultConfig), "utf8");
 }
 const configRaw = fs.readFileSync(configFilePath, "utf8");
 const config = yaml.safeLoad(configRaw);
@@ -45,6 +46,8 @@ assert(
     motd: string(),
     maxPlayers: number(),
     favicon: string(),
+    host: string(),
+    port: number(),
   }),
 );
 
