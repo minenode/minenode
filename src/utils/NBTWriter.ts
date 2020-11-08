@@ -77,55 +77,44 @@ export default class NBTWriter {
       mine_buffer.writeByte(nbt_tag.data);
     } else if (nbt_tag instanceof NBTStructure.TagShort) {
       mine_buffer.writeShort(nbt_tag.data);
-
     } else if (nbt_tag instanceof NBTStructure.TagInt) {
       mine_buffer.writeInt(nbt_tag.data);
-
     } else if (nbt_tag instanceof NBTStructure.TagLong) {
       mine_buffer.writeLong(nbt_tag.data);
-
     } else if (nbt_tag instanceof NBTStructure.TagFloat) {
       mine_buffer.writeFloat(nbt_tag.data);
-
     } else if (nbt_tag instanceof NBTStructure.TagDouble) {
       mine_buffer.writeDouble(nbt_tag.data);
-
     } else if (nbt_tag instanceof NBTStructure.TagByteArray) {
       mine_buffer.writeInt(nbt_tag.data.length);
 
       for (let i = 0; i < nbt_tag.data.length; i++) {
         mine_buffer.writeByte(nbt_tag.data[i]);
       }
-
     } else if (nbt_tag instanceof NBTStructure.TagString) {
       mine_buffer.writeShort(nbt_tag.data.length);
       mine_buffer.writeBytes(Buffer.from(nbt_tag.data, "utf8"));
-
     } else if (nbt_tag instanceof NBTStructure.TagList) {
       mine_buffer.writeByte(nbt_tag.data_type);
       mine_buffer.writeInt(nbt_tag.data.length);
       for (let i = 0; i < nbt_tag.data.length; i++) {
         this.write_tag(nbt_tag.data[i], mine_buffer, null, false, false);
       }
-
     } else if (nbt_tag instanceof NBTStructure.TagCompound) {
       for (const key in nbt_tag.data) {
         this.write_tag(nbt_tag.data[key], mine_buffer, key, true, true);
       }
       mine_buffer.writeByte(0);
-
     } else if (nbt_tag instanceof NBTStructure.TagIntArray) {
       mine_buffer.writeInt(nbt_tag.data.length);
       for (let i = 0; i < nbt_tag.data.length; i++) {
         mine_buffer.writeInt(nbt_tag.data[i]);
       }
-
     } else if (nbt_tag instanceof NBTStructure.TagLongArray) {
       mine_buffer.writeInt(nbt_tag.data.length);
       for (let i = 0; i < nbt_tag.data.length; i++) {
         mine_buffer.writeLong(nbt_tag.data[i]);
       }
-      
     }
   }
 
