@@ -83,6 +83,24 @@ export default class MineBuffer {
   }
 
   /**
+   * Peeks at the byte ahead, returning its value without moving ahead in the buffer
+   */
+  public peekByte(): number {
+    if (this.remaining < 1) throw new RangeError("peekByte() out-of-bounds");
+    return this.buffer.slice(this.readOffset, this.readOffset + 1).readInt8();
+  }
+
+  /**
+   * Advances the read offset
+   *
+   * @param n the number of bytes to advance
+   */
+  public advanceReadOffset(n: number): void {
+    if (n < 1) return;
+    this.readOffset += n;
+  }
+
+  /**
    * Reads multiple bytes from the buffer.
    * @param n the number of bytes to read (positive integer)
    * @throws {RangeError} if the buffer is exhausted.
