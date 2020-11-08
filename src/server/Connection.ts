@@ -138,46 +138,51 @@ export default class Connection extends EventEmitter<{
   }
 
   protected _onData(data: Buffer): void {
-    if (data.length > MAX_PACKET_SIZE) {
-      throw new RangeError("packet size too large");
-    }
-
-    if (this.encryption.enabled) {
-      data = this.encryption.updateDecipher(data);
-    }
-
-    this.buffer.writeBytes(data);
-
-    while (this.buffer.remaining > 0) {
-      const readOffset = this.buffer.readOffset;
-      let payload: MineBuffer;
-
-      try {
-        const length = this.buffer.readVarInt();
-        payload = new MineBuffer(this.buffer.readBytes(length));
-      } catch (e) {
-        if (e instanceof RangeError && e.message === "readBytes() out-of-bounds") {
-          this.buffer.readOffset = readOffset;
-          break;
-        }
-        throw e;
+    try {
+      if (data.length > MAX_PACKET_SIZE) {
+        throw new RangeError("packet size too large");
       }
 
-      if (this.compression.enabled && this.compression.threshold > 0) {
-        const dataLength = payload.readVarInt();
-        if (dataLength !== 0) {
-          payload = new MineBuffer(this.compression.compress(payload.readRemaining()));
-          if (dataLength !== payload.remaining) {
-            throw new RangeError("uncompressed length does not match");
+      if (this.encryption.enabled) {
+        data = this.encryption.updateDecipher(data);
+      }
+
+      this.buffer.writeBytes(data);
+
+      while (this.buffer.remaining > 0) {
+        const readOffset = this.buffer.readOffset;
+        let payload: MineBuffer;
+
+        try {
+          const length = this.buffer.readVarInt();
+          payload = new MineBuffer(this.buffer.readBytes(length));
+        } catch (e) {
+          if (e instanceof RangeError && e.message === "readBytes() out-of-bounds") {
+            this.buffer.readOffset = readOffset;
+            break;
+          }
+          throw e;
+        }
+
+        if (this.compression.enabled && this.compression.threshold > 0) {
+          const dataLength = payload.readVarInt();
+          if (dataLength !== 0) {
+            payload = new MineBuffer(this.compression.compress(payload.readRemaining()));
+            if (dataLength !== payload.remaining) {
+              throw new RangeError("uncompressed length does not match");
+            }
           }
         }
+
+        const packetID = payload.readVarInt();
+        this.emit("message", { packetID, payload });
       }
 
-      const packetID = payload.readVarInt();
-      this.emit("message", { packetID, payload });
+      this.buffer = new MineBuffer(this.buffer.readRemaining());
+    } catch (err) {
+      this.disconnect(String(err));
+      this.server.logger.error(inspect(err));
     }
-
-    this.buffer = new MineBuffer(this.buffer.readRemaining());
   }
 
   protected _onError(error: unknown): void {
