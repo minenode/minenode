@@ -88,7 +88,7 @@ export class Logger extends BaseLogger implements ILogger {
       [LogLevel.ERROR]: chalk.bold.red,
     }[level];
     // eslint-disable-next-line no-console
-    console.log(format(`${process.uptime()} [${prefix}/${level}] ${message}`));
+    console.log(format(`${process.uptime().toFixed(9)} [${prefix}/${level}] ${message}`));
     // TODO: write to file
   }
 
