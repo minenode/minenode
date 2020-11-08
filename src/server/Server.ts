@@ -85,8 +85,9 @@ export default class Server extends EventEmitter {
     this.loadServerIcon();
     this.generateKeyPair();
     // TODO: config in constructor
-    this.tcpServer.listen(this.config.port, this.config.host);
-    this.logger.info(`Server listening on ${this.tcpServer.address()}`);
+    this.tcpServer.listen(this.config.port, this.config.host, () => {
+      this.logger.info(`Server listening on ${this.config.host}:${this.config.port}`);
+    });
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
