@@ -20,7 +20,7 @@ import Connection, { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../Message";
 import StatusPongMessage from "../clientbound/StatusPongMessage";
 
-export class StatusPingMessageHandler extends MessageHandler {
+export default class StatusPingMessageHandler extends MessageHandler {
   public constructor(server: Server) {
     super({
       state: ConnectionState.STATUS,

@@ -19,7 +19,7 @@ import MineBuffer from "../../../../../utils/MineBuffer";
 import Connection, { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../Message";
 
-export class HandshakeMessageHandler extends MessageHandler {
+export default class HandshakeMessageHandler extends MessageHandler {
   public constructor(server: Server) {
     super({
       state: ConnectionState.HANDSHAKE,

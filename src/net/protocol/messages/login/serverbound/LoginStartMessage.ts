@@ -22,7 +22,7 @@ import Connection from "../../../../../server/Connection";
 import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
 
-export class LoginStartMessage extends MessageHandler {
+export default class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {
     super({
       state: ConnectionState.LOGIN,

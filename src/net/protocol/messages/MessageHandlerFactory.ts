@@ -18,22 +18,14 @@ import Server from "../../../server/Server";
 import { MessageHandler } from "../Message";
 import { ConnectionState } from "../../../server/Connection";
 
-import { HandshakeMessageHandler } from "./handshake/serverbound/HandshakeMessage";
-import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage";
-import { StatusRequestMessageHandler } from "./status/serverbound/StatusRequestMessage";
-import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
-import { LoginEncryptionResponseMessage } from "./login/serverbound/LoginEncryptionResponseMessage";
+// This is populated with the exports of every file matching the glob src/net/protocol/messages/**/serverbound/*.ts as defined in tsconfig.json (plugins)
+const compileTransformedTree: { [name: string]: { new (server: Server): MessageHandler } } = {};
 
 export default class MessageHandlerFactory {
   public readonly registered: Set<MessageHandler> = new Set();
 
   public constructor(public readonly server: Server) {
-    this.registered
-      .add(new HandshakeMessageHandler(this.server))
-      .add(new StatusPingMessageHandler(this.server))
-      .add(new StatusRequestMessageHandler(this.server))
-      .add(new LoginEncryptionResponseMessage(this.server))
-      .add(new LoginStartMessage(this.server));
+    Object.values(compileTransformedTree).forEach(HandlerConstructor => this.registered.add(new HandlerConstructor(this.server)));
   }
 
   public getHandler(id: number, state: ConnectionState): MessageHandler | null {

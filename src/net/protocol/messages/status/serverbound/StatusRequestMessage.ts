@@ -22,7 +22,7 @@ import StatusResponseMessage from "../clientbound/StatusResponseMessage";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
 import { formatChat } from "../../../../../utils/Chat";
 
-export class StatusRequestMessageHandler extends MessageHandler {
+export default class StatusRequestMessageHandler extends MessageHandler {
   public constructor(server: Server) {
     super({
       state: ConnectionState.STATUS,

@@ -28,7 +28,7 @@ import { PlaylientboundPositionAndLookMessage } from "../../play/clientbound/Pla
 import PositionYP from "../../../../../utils/geometry/PositionYP";
 import { ChatColor } from "../../../../../utils/Chat";
 
-export class LoginEncryptionResponseMessage extends MessageHandler {
+export default class LoginEncryptionResponseMessage extends MessageHandler {
   public constructor(server: Server) {
     super({
       state: ConnectionState.LOGIN,

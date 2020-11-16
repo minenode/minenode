@@ -5,11 +5,27 @@
     "strict": true,
     "moduleResolution": "node",
     "esModuleInterop": false,
-    // "declaration": true,
     "sourceMap": true,
     "skipLibCheck": true,
     "lib": ["esnext"],
-    "outDir": "dist"
+    "outDir": "dist",
+    "plugins": [
+      {
+        "transform": "ts-transform-auto-require",
+        "autoRequires": [
+          {
+            "source": {
+              "glob": "src/net/protocol/messages/**/serverbound/*.ts",
+              "ignore": []
+            },
+            "target": {
+              "file": "src/net/protocol/messages/MessageHandlerFactory.ts",
+              "variable": "compileTransformedTree"
+            }
+          }
+        ]
+      }
+    ]
   },
   "include": ["src/**/*.ts"]
 }
