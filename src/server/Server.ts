@@ -20,11 +20,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
 import * as appRootPath from "app-root-path";
+import { inspect } from "util";
 
 import Connection, { getConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
-import { ILogger, Logger } from "../utils/Logger";
-import { inspect } from "util";
+import { LogManager } from "../utils/Logger";
 
 export interface ServerConfig {
   compressionThreshold: number;
@@ -43,7 +43,7 @@ export default class Server extends EventEmitter {
   public encodedFavicon?: string;
   public keypair!: crypto.KeyPairKeyObjectResult;
 
-  public readonly logger: ILogger = new Logger("server");
+  protected readonly logger = LogManager.getLogger();
 
   public constructor(public readonly config: Readonly<ServerConfig>) {
     super();
@@ -74,7 +74,7 @@ export default class Server extends EventEmitter {
       } else {
         const raw = fs.readFileSync(serverIconPath);
         this.encodedFavicon = "data:image/png;base64," + raw.toString("base64");
-        this.logger.info(`Loaded favicon from ${serverIconPath} (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
+        this.logger.info(`Loaded favicon (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
       }
     } else {
       this.logger.warn(`${serverIconPath} does not exist`);
@@ -91,7 +91,7 @@ export default class Server extends EventEmitter {
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
-    const connection = new Connection(this, socket);
+    const connection = new Connection(socket);
     connection.encryption.setKeypair(this.keypair);
     connection.compression.setThreshold(this.config.compressionThreshold);
 

@@ -51,7 +51,7 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
 
     if (!decryptedVerifyToken.equals(player.encryption.verifyToken)) {
       // Invalid
-      this.server.logger.error(`${player.remote}: Verify token mismatch`);
+      this.logger.error(`${player.remote}: Verify token mismatch`);
       return player.disconnect("Verify token mismatch");
     }
 

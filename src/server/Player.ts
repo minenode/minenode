@@ -17,10 +17,13 @@
 import { EventEmitter } from "eventemitter3";
 import Connection from "./Connection";
 import Server from "./Server";
+import { LogManager } from "../utils/Logger";
 
 export default class Player extends EventEmitter {
   public connection: Connection;
   public server: Server;
+
+  protected readonly logger = LogManager.getLogger();
 
   public constructor(server: Server, connection: Connection) {
     super();

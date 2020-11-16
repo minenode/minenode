@@ -16,6 +16,7 @@
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-prettier": "^3.1.4",
     "jest": "^26.6.1",
+    "nodemon": "^2.0.6",
     "pre-commit": "^1.2.2",
     "prettier": "^2.1.2",
     "ts-jest": "^26.4.3",
@@ -38,7 +39,9 @@
     "lint": "eslint --fix --ext ts src",
     "clean": "rm -rf dist/*",
     "test": "eslint --ext ts src && tsc --noEmit && jest",
-    "build": "make"
+    "build": "tsc",
+    "watch": "tsc -w --noEmitOnError",
+    "dev": "nodemon --experimental-wasm-bigint dist/app.js"
   },
   "pre-commit": {
     "run": [

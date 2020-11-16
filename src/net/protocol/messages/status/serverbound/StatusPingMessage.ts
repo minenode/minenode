@@ -36,6 +36,6 @@ export class StatusPingMessageHandler extends MessageHandler {
     const response = new StatusPongMessage(payload);
     player.writeMessage(response);
 
-    this.server.logger.debug(`${player.remote}: status ping (payload = ${payload})`);
+    this.logger.debug(`${player.remote}: status ping (payload = ${payload})`);
   }
 }

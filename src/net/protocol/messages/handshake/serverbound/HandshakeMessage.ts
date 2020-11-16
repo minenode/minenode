@@ -36,7 +36,7 @@ export class HandshakeMessageHandler extends MessageHandler {
     const nextState = buffer.readVarInt();
 
     if (nextState !== ConnectionState.STATUS && nextState !== ConnectionState.LOGIN) {
-      this.server.logger.error(`${player.remote}: Invalid nextState: ${nextState}. Disconnecting.`);
+      this.logger.error(`${player.remote}: Invalid nextState: ${nextState}. Disconnecting.`);
       player.hardDisconnect();
       return;
     }
@@ -46,6 +46,6 @@ export class HandshakeMessageHandler extends MessageHandler {
 
     const serverIP = `${serverAddress}:${serverPort}`;
 
-    this.server.logger.debug(`${player.remote}: handshake (server = ${serverIP}, protocol = ${protocolVersion}, nextState = ${nextState})`);
+    this.logger.debug(`${player.remote}: handshake (server = ${serverIP}, protocol = ${protocolVersion}, nextState = ${nextState})`);
   }
 }

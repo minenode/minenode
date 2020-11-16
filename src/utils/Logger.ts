@@ -24,25 +24,20 @@ export enum LogLevel {
   ERROR = "ERROR",
 }
 
-export interface ILogger {
-  log(level: LogLevel, message: string): void;
-  debug(message: string): void;
-  verbose(message: string): void;
-  info(message: string): void;
-  warn(message: string): void;
-  error(message: string): void;
-  child(child: string): ILogger;
-  parent(): ILogger | null;
-  root(): ILogger;
-}
+export class Logger {
+  public constructor(public readonly prefix: string) {}
 
-export abstract class BaseLogger implements ILogger {
-  public constructor(public readonly prefix: string, protected readonly _parent: BaseLogger | null = null) {}
-
-  protected abstract _handle(prefix: string, level: LogLevel, message: string): void;
-
-  public log(level: LogLevel, message: string): void {
-    this.root()._handle(this.prefix, level, message);
+  protected log(level: LogLevel, message: string): void {
+    const format = {
+      [LogLevel.DEBUG]: chalk.greenBright,
+      [LogLevel.VERBOSE]: chalk.cyanBright,
+      [LogLevel.INFO]: chalk.white,
+      [LogLevel.WARN]: chalk.bold.yellowBright,
+      [LogLevel.ERROR]: chalk.bold.red,
+    }[level];
+    // eslint-disable-next-line no-console
+    console.log(format(`${process.uptime().toFixed(9)} [${this.prefix}/${level}] ${message}`));
+    // TODO: write to file
   }
 
   public debug(message: string): void {
@@ -64,50 +59,13 @@ export abstract class BaseLogger implements ILogger {
   public error(message: string): void {
     this.log(LogLevel.ERROR, message);
   }
-
-  public abstract child(child: string): BaseLogger;
-
-  public abstract parent(): BaseLogger | null;
-
-  public abstract root(): BaseLogger;
 }
 
-export class Logger extends BaseLogger implements ILogger {
-  private childLoggers: Map<string, Logger> = new Map();
+export class LogManager {
+  private static loggerInstance: Logger | null = null;
 
-  public constructor(prefix: string, _parent: Logger | null = null) {
-    super(prefix, _parent);
-  }
-
-  protected _handle(prefix: string, level: LogLevel, message: string): void {
-    const format = {
-      [LogLevel.DEBUG]: chalk.greenBright,
-      [LogLevel.VERBOSE]: chalk.cyanBright,
-      [LogLevel.INFO]: chalk.white,
-      [LogLevel.WARN]: chalk.bold.yellowBright,
-      [LogLevel.ERROR]: chalk.bold.red,
-    }[level];
-    // eslint-disable-next-line no-console
-    console.log(format(`${process.uptime().toFixed(9)} [${prefix}/${level}] ${message}`));
-    // TODO: write to file
-  }
-
-  public child(child: string): Logger {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (this.childLoggers.has(child)) return this.childLoggers.get(child)!;
-    const newLogger = new Logger(child, this);
-    this.childLoggers.set(child, newLogger);
-    return newLogger;
-  }
-
-  public parent(): Logger | null {
-    return this._parent as Logger | null;
-  }
-
-  public root(): Logger {
-    let res;
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    for (let n: Logger = this; n._parent; n = n._parent as Logger) res = n;
-    return res || this;
+  public static getLogger(): Logger {
+    if (!this.loggerInstance) this.loggerInstance = new Logger("server");
+    return this.loggerInstance;
   }
 }

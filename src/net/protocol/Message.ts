@@ -18,6 +18,7 @@ import Server from "../../server/Server";
 import Player from "../../server/Player";
 import MineBuffer from "../../utils/MineBuffer";
 import Connection, { ConnectionState } from "../../server/Connection";
+import { LogManager } from "../../utils/Logger";
 
 export interface MessageHandlerOptions {
   state: ConnectionState;
@@ -31,6 +32,8 @@ export abstract class MessageHandler {
   public readonly id: number;
   public readonly label: string;
   public readonly server: Server;
+
+  protected readonly logger = LogManager.getLogger();
 
   public constructor(options: MessageHandlerOptions) {
     this.state = options.state;

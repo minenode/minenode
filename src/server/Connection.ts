@@ -23,8 +23,8 @@ import EncryptionState from "./EncryptionState";
 import CompressionState from "./CompressionState";
 import { Chat, consoleFormatChat } from "../utils/Chat";
 import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
-import Server from "./Server";
 import { inspect } from "util";
+import { LogManager } from "../utils/Logger";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
 
@@ -58,12 +58,11 @@ export default class Connection extends EventEmitter<{
   public encryption: EncryptionState;
   public compression: CompressionState;
   public username?: string;
-  public server: Server;
 
-  public constructor(server: Server, socket: net.Socket) {
+  protected readonly logger = LogManager.getLogger();
+
+  public constructor(socket: net.Socket) {
     super();
-
-    this.server = server;
 
     this.socket = socket;
     this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
@@ -80,7 +79,7 @@ export default class Connection extends EventEmitter<{
   public writeMessage(message: IClientboundMessage): void {
     const buffer = new MineBuffer();
     message.encode(buffer);
-    this.server.logger.debug(`${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
+    this.logger.debug(`${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
     this.write(message.id, buffer);
   }
 
@@ -119,7 +118,7 @@ export default class Connection extends EventEmitter<{
   }
 
   public disconnect(reason: Chat): void {
-    this.server.logger.warn(`${this.remote}: disconnect called with reason: ${consoleFormatChat(reason).replace(/\n/g, "\u23CE")}`);
+    this.logger.warn(`${this.remote}: disconnect called with reason: ${consoleFormatChat(reason).replace(/\n/g, "\u23CE")}`);
     if (this.state === ConnectionState.HANDSHAKE || this.state === ConnectionState.STATUS) {
       this.hardDisconnect();
     } else if (this.state === ConnectionState.LOGIN) {
@@ -181,12 +180,12 @@ export default class Connection extends EventEmitter<{
       this.buffer = new MineBuffer(this.buffer.readRemaining());
     } catch (err) {
       this.disconnect(String(err));
-      this.server.logger.error(inspect(err));
+      this.logger.error(inspect(err));
     }
   }
 
   protected _onError(error: unknown): void {
-    this.server.logger.error(inspect(error));
+    this.logger.error(inspect(error));
     // TODO
   }
 }

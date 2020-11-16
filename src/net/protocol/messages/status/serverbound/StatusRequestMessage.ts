@@ -47,6 +47,6 @@ export class StatusRequestMessageHandler extends MessageHandler {
       favicon: this.server.encodedFavicon,
     });
     player.writeMessage(response);
-    this.server.logger.debug(`${player.remote}: status request`);
+    this.logger.debug(`${player.remote}: status request`);
   }
 }
