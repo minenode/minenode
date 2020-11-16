@@ -2,7 +2,7 @@ import MineBuffer from "../../src/utils/MineBuffer";
 import Connection from "../../src/server/Connection";
 import * as net from "net";
 
-function pipe(callback: (client: Connection, server: Connection, callback: () => any) => any): void {
+function pipe(callback: (client: Connection, server: Connection, callback: () => void) => void): void {
   const server = net
     .createServer(serverSocket => {
       server.close();
@@ -18,7 +18,7 @@ function pipe(callback: (client: Connection, server: Connection, callback: () =>
   const clientConnection = new Connection(clientSocket);
 }
 
-function testPacket(client: Connection, server: Connection, packetID: number, payload: MineBuffer, callback: () => any) {
+function testPacket(client: Connection, server: Connection, packetID: number, payload: MineBuffer, callback: () => void): void {
   const payload2 = payload.clone();
   const targetData = payload2.readRemaining().toString("hex");
   client.write(packetID, payload);
