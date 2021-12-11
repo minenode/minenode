@@ -1,14 +1,13 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2018",
+    "module": "CommonJS",
+    "target": "ES2018",
     "strict": true,
-    "moduleResolution": "node",
-    "esModuleInterop": false,
-    // "declaration": true,
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
     "sourceMap": true,
     "skipLibCheck": true,
-    "lib": ["esnext"],
+    "lib": ["ESNext"],
     "outDir": "dist"
   },
   "include": ["src/**/*.ts"]

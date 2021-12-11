@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import * as Long from "long";
+import Long from "long";
 import * as uuid from "uuid";
 
 import BasicPosition3D from "./geometry/BasicPosition3D";
@@ -350,7 +350,7 @@ export default class MineBuffer {
    */
   public writeUUID(value: string): this {
     if (!uuid.validate(value)) throw new TypeError("invalid uuid to encode");
-    this.writeBytes(Buffer.from(uuid.parse(value)));
+    this.writeBytes(Buffer.from(uuid.parse(value) as number[]));
     return this;
   }
 

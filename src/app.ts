@@ -19,14 +19,14 @@ import Server from "./server/Server";
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
-import * as appRoot from "app-root-path";
+import appRoot from "app-root-path";
 import { assert, object, number, string } from "superstruct";
 
 const configFilePath = path.resolve(appRoot.path, "config.yml");
 if (!fs.existsSync(configFilePath)) {
   fs.writeFileSync(
     configFilePath,
-    yaml.safeDump({
+    yaml.dump({
       compressionThreshold: 256,
       motd: "A Minecraft Server",
       maxPlayers: 5,
@@ -36,7 +36,7 @@ if (!fs.existsSync(configFilePath)) {
   );
 }
 const configRaw = fs.readFileSync(configFilePath, "utf8");
-const config = yaml.safeLoad(configRaw);
+const config = yaml.load(configRaw);
 
 assert(
   config,

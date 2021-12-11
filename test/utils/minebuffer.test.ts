@@ -1,5 +1,5 @@
 import MineBuffer from "../../src/utils/MineBuffer";
-import * as Long from "long";
+import Long from "long";
 import * as uuid from "uuid";
 
 const buffer = new MineBuffer();

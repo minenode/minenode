@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import chalk = require("chalk");
+import chalk from "chalk";
 import { string, array, boolean, is, enums, number, object, optional, union, lazy, Struct } from "superstruct";
 
 export const FORMAT_CHAR = "§";
@@ -67,7 +67,7 @@ export function isChat(obj: unknown): obj is Chat {
       ),
       extra: optional(array(lazy(() => ChatSchema))),
     }),
-  ]);
+  ]) as Struct<Chat>; // TODO: This is a hack to stop TS from complaining about the union type.
 
   return is(obj, ChatSchema);
 }
