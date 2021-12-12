@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import util from "util";
@@ -21,7 +22,8 @@ import util from "util";
 import szBin from "7zip-bin";
 import sz from "node-7z";
 import chalk from "chalk";
-import { getRootDirectory } from "./DeployUtils";
+
+import { getRootDirectory, isRunningFromPkg } from "./DeployUtils";
 
 export enum LogLevel {
   DEBUG,
@@ -106,6 +108,7 @@ export interface FileConsumerOptions extends LogConsumerOptions {
 
 export class FileConsumer extends LogConsumer {
   protected directory: string;
+
   #archiveLock = false;
 
   public constructor(options: FileConsumerOptions = {}) {
@@ -128,7 +131,44 @@ export class FileConsumer extends LogConsumer {
     this.archiveIfNeeded();
   }
 
-  protected archiveIfNeeded(): void {
+  private static p7zModuleHash: string | null = null;
+
+  private static setup7z(): string {
+    if (!isRunningFromPkg()) {
+      return szBin.path7za;
+    }
+
+    const libraryPath = path.join(getRootDirectory(), "lib");
+    fs.mkdirSync(libraryPath, { recursive: true });
+    const filename = path.basename(szBin.path7za);
+
+    const libFilename = path.join(libraryPath, filename);
+    if (!fs.existsSync(libFilename)) {
+      fs.writeFileSync(libFilename, fs.readFileSync(szBin.path7za));
+      fs.chmodSync(libFilename, 0o755);
+      // We cannot use the copy function because it does not work inside of pkg snapshot filesystems
+    } else {
+      // Check hash
+      if (FileConsumer.p7zModuleHash === null) {
+        const moduleHash = crypto.createHash("sha256");
+        moduleHash.update(fs.readFileSync(szBin.path7za));
+        FileConsumer.p7zModuleHash = moduleHash.digest("hex");
+      }
+
+      const libHash = crypto.createHash("sha256");
+      libHash.update(fs.readFileSync(libFilename));
+      const libHashString = libHash.digest("hex");
+
+      if (FileConsumer.p7zModuleHash !== libHashString) {
+        fs.writeFileSync(libFilename, fs.readFileSync(szBin.path7za));
+        fs.chmodSync(libFilename, 0o755);
+      }
+    }
+
+    return libFilename;
+  }
+
+  private archiveIfNeeded(): void {
     const logFiles = fs.readdirSync(this.directory).sort();
     const needArchive = logFiles.filter(f => f.endsWith(".log") && f !== new Date().toISOString().split("T")[0] + ".log");
 
@@ -138,7 +178,7 @@ export class FileConsumer extends LogConsumer {
         path.join(this.directory, "archive.7z"),
         needArchive.map(f => path.join(this.directory, f)),
         {
-          $bin: szBin.path7za,
+          $bin: FileConsumer.setup7z(),
           archiveType: "7z",
           method: ["0=lzma", "x=9", "fb=64", "d=32m", "s=on"],
         },
@@ -209,3 +249,5 @@ export class Logger {
     this.log(LogLevel.ERROR, message, ...args);
   }
 }
+
+FileConsumer["setup7z"](); // Initialize 7z module on startup
