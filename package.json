@@ -7,44 +7,46 @@
   "devDependencies": {
     "@ef-carbon/tspm": "^2.2.5",
     "@swc-node/jest": "^1.4.1",
-    "@types/app-root-path": "^1.2.4",
     "@types/jest": "^27.0.3",
     "@types/js-yaml": "^4.0.5",
     "@types/long": "^4.0.1",
     "@types/node": "^16.11.12",
+    "@types/node-7z": "^2.1.3",
     "@types/uuid": "^8.3.3",
     "@typescript-eslint/eslint-plugin": "^5.6.0",
     "@typescript-eslint/parser": "^5.6.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.4.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^27.4.4",
+    "npm-run-all": "^4.1.5",
     "pkg": "^5.5.1",
     "pre-commit": "^1.2.2",
     "prettier": "^2.5.1",
     "typescript": "^4.5.3"
   },
   "dependencies": {
-    "@minenode/wasm-java-random": "^0.0.3",
+    "7zip-bin": "^5.1.1",
     "@swc-node/register": "^1.4.0",
-    "app-root-path": "^3.0.0",
     "chalk": "^4.1.2",
     "eventemitter3": "^4.0.7",
-    "got": "^12.0.0",
     "js-yaml": "^4.1.0",
     "long": "^5.2.0",
     "nbt": "^0.8.1",
+    "node-7z": "^3.0.0",
     "superstruct": "^0.15.3",
     "tsconfig-paths": "^3.12.0",
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "start": "node -r @swc-node/register -r tsconfig-paths/register src/app.ts",
-    "build": "tsc",
+    "start": "tsc && ef-tspm -s && node ./build/app.js",
+    "debug": "cross-env MINENODE_DEBUG=1 run-s start",
+    "build": "tsc && ef-tspm -s",
     "lint": "eslint --ext ts src test",
     "lint:fix": "eslint --fix --ext ts src test",
     "test": "tsc --noEmit && jest",
-    "package": "tsc && ef-tspm && pkg --options -t node16-linux-x64,node16-win-x64,node16-macos-x64 --out-path dist --public --no-bytecode --compress brotli build/app.js"
+    "package": "tsc && ef-tspm -s && pkg --options -t node16-linux-x64,node16-win-x64,node16-macos-x64 --out-path dist --public --no-bytecode --compress brotli build/app.js"
   },
   "pre-commit": {
     "run": [

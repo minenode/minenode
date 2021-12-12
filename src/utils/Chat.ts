@@ -162,8 +162,7 @@ export function consoleFormatChat(chat: Chat): string {
             case ChatColor.UNDERLINE:
             case ChatColor.ITALIC:
             case ChatColor.RESET:
-              console.error("Cannot use ChatColor format types in chat object color property");
-              break;
+              throw new TypeError("Cannot use ChatColor format types in chat object color property");
             default:
               chatString += {
                 black: ChatColor.BLACK,

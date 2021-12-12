@@ -37,7 +37,7 @@ export class LoginStartMessage extends MessageHandler {
     // TODO: validate username w/ regex
     player.username = username;
 
-    console.log(`[server/INFO] ${player.remote}: Login start for username '${username}'`);
+    this.server.logger.info(`${player.remote}: Login start for username '${username}'`);
 
     if (!player.clientProtocol) {
       return player.disconnect("Your client did not provide a protocol version.");

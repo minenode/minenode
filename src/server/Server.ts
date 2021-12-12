@@ -15,14 +15,17 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { EventEmitter } from "eventemitter3";
-import * as net from "net";
-import * as fs from "fs";
-import * as path from "path";
-import * as crypto from "crypto";
-import * as appRootPath from "app-root-path";
+import net from "net";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import util from "util";
 
 import Connection, { getConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
+import { getRootDirectory } from "../utils/DeployUtils";
+import { Logger, LogLevel } from "/utils/Logger";
+import { StdoutConsumer, FileConsumer } from "../utils/Logger";
 
 export interface ServerOptions {
   compressionThreshold: number;
@@ -39,6 +42,10 @@ export default class Server extends EventEmitter {
   public encodedFavicon?: string;
   public keypair!: crypto.KeyPairKeyObjectResult;
 
+  public readonly logger = new Logger("Server")
+    .withConsumer(new StdoutConsumer({ minLevel: process.env.MINENODE_DEBUG ? LogLevel.DEBUG : LogLevel.INFO }))
+    .withConsumer(new FileConsumer({ minLevel: process.env.MINENODE_DEBUG ? LogLevel.DEBUG : LogLevel.INFO }));
+
   public constructor(public readonly options: Readonly<ServerOptions>) {
     super();
 
@@ -52,26 +59,26 @@ export default class Server extends EventEmitter {
     this.keypair = crypto.generateKeyPairSync("rsa", {
       modulusLength: 1024,
     });
-    console.log("[server/INFO] generated RSA keypair, 1024-bit modulus");
+    this.logger.info("generated RSA keypair, 1024-bit modulus");
   }
 
   protected loadServerIcon(): void {
     if (!this.options.favicon) {
-      console.log("[server/INFO] no server icon was set");
+      this.logger.info("no server icon was set");
       return;
     }
-    const serverIconPath = path.resolve(appRootPath.path, this.options.favicon);
+    const serverIconPath = path.resolve(getRootDirectory(), this.options.favicon);
     if (fs.existsSync(serverIconPath) && fs.statSync(serverIconPath).isFile()) {
       if (fs.statSync(serverIconPath).size > (65535 * 3) / 4) {
-        console.error(`[server/ERROR] ${serverIconPath} is too large. Cannot exceed ${(65535 * 3) / 4} bytes.`);
+        this.logger.error(`${serverIconPath} is too large. Cannot exceed ${(65535 * 3) / 4} bytes.`);
         return;
       } else {
         const raw = fs.readFileSync(serverIconPath);
         this.encodedFavicon = "data:image/png;base64," + raw.toString("base64");
-        console.log(`[server/INFO] loaded favicon from ${serverIconPath} (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
+        this.logger.info(`loaded favicon from ${serverIconPath} (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
       }
     } else {
-      console.log(`[server/INFO] ${serverIconPath} does not exist`);
+      this.logger.info(`${serverIconPath} does not exist`);
     }
   }
 
@@ -80,25 +87,26 @@ export default class Server extends EventEmitter {
     this.generateKeyPair();
     // TODO: config in constructor
     this.tcpServer.listen(25565, "0.0.0.0");
-    console.log(`[server/INFO] server listening`);
+    this.logger.info(`server listening`);
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
-    const connection = new Connection(socket);
+    const connection = new Connection(this, socket);
     connection.encryption.setKeypair(this.keypair);
     connection.compression.setThreshold(this.options.compressionThreshold);
 
-    console.log(`[server/INFO] ${connection.remote}: connected`);
+    this.logger.info(`${connection.remote}: connected`);
     this.connections.add(connection);
 
-    // Bind connection events -- TODO: move this to Player class
+    // Bind connection events
+    // TODO: move this to Player class
     connection.on("disconnect", () => {
-      console.log(`[server/INFO] ${connection.remote}: disconnected`);
+      this.logger.info(`${connection.remote}: disconnected`);
       this.connections.delete(connection);
     });
 
     connection.on("message", msg => {
-      console.log(`[server/DEBUG] ${connection.remote}: message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv`);
+      this.logger.debug(`${connection.remote}: message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv`);
 
       const handler = this.handlerFactory.getHandler(msg.packetID, connection.state);
 
@@ -106,14 +114,14 @@ export default class Server extends EventEmitter {
         try {
           handler.handle(msg.payload, connection);
         } catch (err) {
-          console.error(err);
+          this.logger.error(util.inspect(err));
           connection.disconnect({ text: String(err), color: "red" });
         }
-        console.log(`[server/DEBUG] ${connection.remote}: message '${handler.label}' handled`);
+        this.logger.debug(`${connection.remote}: message '${handler.label}' handled`);
       } else {
         // TODO handle
-        console.error(
-          `[server/ERROR] ${connection.remote}: invalid message (state = ${getConnectionState(connection.state)} [${connection.state}]), id = ${msg.packetID})`,
+        this.logger.error(
+          `${connection.remote}: invalid message (state = ${getConnectionState(connection.state)} [${connection.state}]), id = ${msg.packetID})`,
         );
       }
     });
