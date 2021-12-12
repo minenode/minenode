@@ -40,13 +40,16 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "start": "tsc && ef-tspm -s && node ./build/app.js",
+    "prestart": "run-s build",
+    "start": "node ./build/app.js",
     "debug": "cross-env MINENODE_DEBUG=1 run-s start",
-    "build": "tsc && ef-tspm -s",
+    "build": "tsc",
+    "postbuild": "ef-tspm -s",
     "lint": "eslint --ext ts src test",
     "lint:fix": "eslint --fix --ext ts src test",
     "test": "tsc --noEmit && jest",
-    "package": "tsc && ef-tspm -s && pkg --options -t node16-linux-x64,node16-win-x64,node16-macos-x64 --out-path dist --public --no-bytecode --compress brotli build/app.js"
+    "prepackage": "run-s build",
+    "package": "pkg --options -t node16-linux-x64,node16-win-x64,node16-macos-x64 --out-path dist --public --no-bytecode --compress brotli build/app.js"
   },
   "pre-commit": {
     "run": [
