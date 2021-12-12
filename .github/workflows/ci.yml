@@ -19,7 +19,6 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: 16
-        cache: yarn
     - name: Install dependencies
       run: yarn install --frozen-lockfile --non-interactive
     - name: Lint
@@ -35,7 +34,6 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: 16
-        cache: yarn
     - name: Install dependencies
       run: yarn install --frozen-lockfile --non-interactive
     - name: Test
@@ -51,14 +49,14 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: 16
-        cache: yarn
     - name: Install dependencies
       run: yarn install --frozen-lockfile --non-interactive
     - name: Build
       run: yarn build
     - name: Package
+      run: yarn package
+    - name: Publish
       uses: actions/upload-artifact@v2
       with:
         name: dist
         path: dist
-      run: yarn package
