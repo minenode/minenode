@@ -1,4 +1,4 @@
-// NBTWriter.ts - Write NBT bytes// Copyright (C) 2020 MineNode
+// NBTWriter.ts - Write NBT bytes
 // Copyright (C) 2021 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
