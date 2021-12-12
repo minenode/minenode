@@ -222,7 +222,7 @@ export function consoleFormatChat(chat: Chat): string {
       ChatColor.ITALIC,
       ChatColor.RESET,
     ]) {
-      if (chatString.substr(0, formatCode.length) === formatCode) {
+      if (chatString.substring(0, formatCode.length) === formatCode) {
         format = {
           [ChatColor.BLACK]: format.hex("#000000"),
           [ChatColor.DARK_BLUE]: format.hex("#0000AA"),
@@ -247,16 +247,16 @@ export function consoleFormatChat(chat: Chat): string {
           [ChatColor.ITALIC]: format.italic,
           [ChatColor.RESET]: format.reset,
         }[formatCode];
-        chatString = chatString.substr(formatCode.length);
+        chatString = chatString.substring(formatCode.length);
         continue parse;
       } else {
         if (slice.includes(formatCode)) {
-          slice = slice.substr(0, slice.indexOf(formatCode));
+          slice = slice.substring(0, slice.indexOf(formatCode));
         }
       }
     }
     result += format(slice);
-    chatString = chatString.substr(slice.length);
+    chatString = chatString.substring(slice.length);
   }
 
   return result;

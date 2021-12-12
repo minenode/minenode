@@ -8,5 +8,6 @@
   "editor.formatOnPaste": true,
   "editor.rulers": [160],
   "eslint.format.enable": true,
-  "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "todo-tree.filtering.useBuiltInExcludes": "file and search excludes"
 }

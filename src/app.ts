@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "./server/Server";
-
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
-import appRoot from "app-root-path";
 import { assert, object, number, string } from "superstruct";
 
-const configFilePath = path.resolve(appRoot.path, "config.yml");
+import Server from "./server/Server";
+import { getRootDirectory } from "./utils/DeployUtils";
+
+const configFilePath = path.join(getRootDirectory(), "config.yml");
 if (!fs.existsSync(configFilePath)) {
   fs.writeFileSync(
     configFilePath,

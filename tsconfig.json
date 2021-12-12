@@ -5,10 +5,8 @@
     "strict": true,
     "moduleResolution": "Node",
     "esModuleInterop": true,
-    "sourceMap": true,
-    "skipLibCheck": true,
     "lib": ["ESNext"],
-    "outDir": "dist"
+    "outDir": "build"
   },
   "include": ["src/**/*.ts"]
 }
