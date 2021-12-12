@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+logs/
 *.log
 package-lock.json
 server-icon.png
