@@ -4,6 +4,10 @@
 
 A _Minecraft: Java Edition_ server built on top of Node.JS.
 
+![](https://img.shields.io/badge/Minecraft-1.18-brightgreen)
+[![](https://github.com/minenode/minenode/actions/workflows/ci.yml/badge.svg)](https://github.com/minenode/minenode/actions/workflows/ci.yml)
+[![Discord](https://img.shields.io/discord/771964031903727646?color=5865F2&label=Discord&logo=discord&logoColor=white)](https://discord.gg/khzfmUM8bt)
+
 **This project is still in early development. Do not expect a build.**
 
 Join our Discord server if you'd like to contribute, or to stay up to date on progress!
@@ -17,22 +21,13 @@ Join our Discord server if you'd like to contribute, or to stay up to date on pr
 ## Development
 
 To compile/run the project, you will need:
- - Node.JS > 13.0.0
- - Yarn package manager (`npm install -g yarn`)
- - Make (on Windows, you could use MinGW or WSL)
 
-To contribue and develop, it is highly suggested that you have:
- - Visual Studio Code
-   - Extensions: Prettier, ESLint (see [extensions.json](.vscode/extensions.json))
+- Node.JS 16+
+- Yarn package manager (`npm install -g yarn`)
+
+Before contributing, please read the [Contribution Guidelines](CONTRIBUTING.md).
 
 The code style is managed by Prettier and ESLint. A pre-commit hook is configured to run the `test` script in package.json. Do not attempt to bypass this hook in your commit.
-
-To compile the project, install the dependencies and run:
-```
-make
-```
-
-You can also find the [other make targets](Makefile) useful.
 
 ## License
 
@@ -40,4 +35,4 @@ This project is licensed under the GNU Affero General Public License (AGPL), Ver
 
 Contributors: Please read the [Contribution Guidelines](CONTRIBUTING.md).
 
-Copyright &copy; 2020 MineNode.
+Copyright &copy; 2021 MineNode.
