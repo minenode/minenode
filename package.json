@@ -4,6 +4,9 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "node": ">=16.0.0",
+  "bin": {
+    "minenode": "./build/app.js"
+  },
   "devDependencies": {
     "@ef-carbon/tspm": "^2.2.5",
     "@swc-node/jest": "^1.4.1",
@@ -49,12 +52,17 @@
     "lint:fix": "eslint --fix --ext ts src test",
     "test": "tsc --noEmit && jest",
     "prepackage": "run-s build",
-    "package": "pkg --options -t node16-linux-x64,node16-win-x64,node16-macos-x64 --out-path dist --public --no-bytecode build/app.js"
+    "package": "pkg package.json"
   },
   "pre-commit": {
     "run": [
       "lint",
       "test"
     ]
+  },
+  "pkg": {
+    "targets": ["node16-linux-x64", "node16-win-x64", "node16-macos-x64"],
+    "outputPath": "dist",
+    "public": true
   }
 }

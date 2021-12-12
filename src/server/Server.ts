@@ -23,9 +23,10 @@ import util from "util";
 
 import Connection, { getConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
-import { getRootDirectory, getVersion } from "../utils/DeployUtils";
+import { getRootDirectory } from "../utils/DeployUtils";
 import { Logger, LogLevel } from "/utils/Logger";
 import { StdoutConsumer, FileConsumer } from "../utils/Logger";
+import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "/utils/Constants";
 
 export interface ServerOptions {
   compressionThreshold: number;
@@ -55,9 +56,9 @@ export default class Server extends EventEmitter {
     this.handlerFactory = new MessageHandlerFactory(this);
 
     // Display license message
+    this.logger.info(`MineNode ${MINENODE_VERSION} - implementing MC ${GAME_VERSION} (${PROTOCOL_VERSION})`);
     this.logger.info(`Copyright (C) ${new Date().getFullYear()} MineNode. All rights reserved.`);
     this.logger.info("AGPLv3 Licence - https://www.gnu.org/licenses/agpl-3.0.html");
-    this.logger.info(`Server version: ${getVersion()}`);
   }
 
   protected generateKeyPair(): void {

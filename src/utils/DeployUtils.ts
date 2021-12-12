@@ -1,5 +1,5 @@
 // DeployUtils.ts - Utility methods for running in a deployed environment
-// Copyright (C) 2021 MineNode
+// Copyright (C) 2020 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -42,10 +42,4 @@ export function getRootDirectory(): string {
     }
     return dirname;
   }
-}
-
-export function getVersion(): string {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const packageJson = require(path.join(__dirname, "..", "..", "package.json"));
-  return packageJson.version as string;
 }
