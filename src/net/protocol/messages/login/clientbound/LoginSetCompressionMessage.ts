@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { IClientboundMessage } from "../../../Message";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { IClientboundMessage } from "/net/protocol/Message";
+import MineBuffer from "/utils/MineBuffer";
 
 export default class LoginSetCompressionMessage implements IClientboundMessage {
   public id = 0x03;

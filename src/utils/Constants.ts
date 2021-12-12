@@ -14,5 +14,5 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-export const PROTOCOL_VERSION = 754;
-export const GAME_VERSION = "1.16.4";
+export const PROTOCOL_VERSION = 757;
+export const GAME_VERSION = "1.18.1";

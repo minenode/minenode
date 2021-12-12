@@ -1,6 +1,7 @@
+import * as net from "net";
+
 import MineBuffer from "../../src/utils/MineBuffer";
 import Connection from "../../src/server/Connection";
-import * as net from "net";
 
 function pipe(callback: (client: Connection, server: Connection, callback: () => unknown) => unknown): void {
   const server = net

@@ -16,17 +16,17 @@
 
 import * as crypto from "crypto";
 
-import { MessageHandler } from "../../../Message";
-import Server from "../../../../../server/Server";
-import { ConnectionState } from "../../../../../server/Connection";
-import MineBuffer from "../../../../../utils/MineBuffer";
-import Connection from "../../../../../server/Connection";
+import { MessageHandler } from "/net/protocol/Message";
+import Server from "/server/Server";
+import { ConnectionState } from "/server/Connection";
+import MineBuffer from "/utils/MineBuffer";
+import Connection from "/server/Connection";
 import LoginSetCompressionMessage from "../clientbound/LoginSetCompressionMessage";
 import LoginSuccessMessage from "../clientbound/LoginSuccessMessage";
 import * as uuid from "uuid";
 import { PlaylientboundPositionAndLookMessage } from "../../play/clientbound/PlayClientboundPositionAndLookMessage";
-import PositionYP from "../../../../../utils/geometry/PositionYP";
-import { ChatColor } from "../../../../../utils/Chat";
+import PositionYP from "/utils/geometry/PositionYP";
+import { ChatColor } from "/utils/Chat";
 
 export class LoginEncryptionResponseMessage extends MessageHandler {
   public constructor(server: Server) {

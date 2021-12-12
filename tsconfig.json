@@ -6,7 +6,11 @@
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "lib": ["ESNext"],
-    "outDir": "build"
+    "outDir": "build",
+    "baseUrl": "./src",
+    "paths": {
+      "/*": ["*"]
+    }
   },
   "include": ["src/**/*.ts"]
 }

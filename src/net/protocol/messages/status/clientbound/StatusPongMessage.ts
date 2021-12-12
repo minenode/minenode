@@ -16,8 +16,8 @@
 
 import Long from "long";
 
-import { IClientboundMessage } from "../../../Message";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { IClientboundMessage } from "/net/protocol/Message";
+import MineBuffer from "/utils/MineBuffer";
 
 export default class StatusPongMessage implements IClientboundMessage {
   public id = 0x01;

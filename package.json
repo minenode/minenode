@@ -34,10 +34,11 @@
     "long": "^5.2.0",
     "nbt": "^0.8.1",
     "superstruct": "^0.15.3",
+    "tsconfig-paths": "^3.12.0",
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "start": "node -r @swc-node/register src/index.ts",
+    "start": "node -r @swc-node/register -r tsconfig-paths/register src/app.ts",
     "build": "tsc",
     "lint": "eslint --ext ts src test",
     "lint:fix": "eslint --fix --ext ts src test",

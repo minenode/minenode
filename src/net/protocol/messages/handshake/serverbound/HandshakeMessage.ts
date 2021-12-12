@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../../../../server/Server";
-import MineBuffer from "../../../../../utils/MineBuffer";
-import Connection, { ConnectionState } from "../../../../../server/Connection";
-import { MessageHandler } from "../../../Message";
+import Server from "/server/Server";
+import MineBuffer from "/utils/MineBuffer";
+import Connection, { ConnectionState } from "/server/Connection";
+import { MessageHandler } from "/net/protocol/Message";
 
 export class HandshakeMessageHandler extends MessageHandler {
   public constructor(server: Server) {
