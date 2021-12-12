@@ -23,7 +23,7 @@ import util from "util";
 
 import Connection, { getConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
-import { getRootDirectory } from "../utils/DeployUtils";
+import { getRootDirectory, getVersion } from "../utils/DeployUtils";
 import { Logger, LogLevel } from "/utils/Logger";
 import { StdoutConsumer, FileConsumer } from "../utils/Logger";
 
@@ -53,6 +53,11 @@ export default class Server extends EventEmitter {
     this.tcpServer.on("connection", this._onSocketConnect.bind(this));
 
     this.handlerFactory = new MessageHandlerFactory(this);
+
+    // Display license message
+    this.logger.info(`Copyright (C) ${new Date().getFullYear()} MineNode. All rights reserved.`);
+    this.logger.info("AGPLv3 Licence - https://www.gnu.org/licenses/agpl-3.0.html");
+    this.logger.info(`Server version: ${getVersion()}`);
   }
 
   protected generateKeyPair(): void {

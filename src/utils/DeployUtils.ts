@@ -43,3 +43,9 @@ export function getRootDirectory(): string {
     return dirname;
   }
 }
+
+export function getVersion(): string {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const packageJson = require(path.join(__dirname, "..", "..", "package.json"));
+  return packageJson.version as string;
+}
