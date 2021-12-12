@@ -1,5 +1,5 @@
 // Connection.ts - Provides a wrapper around an inbound TCP socket which handles message framing, etc.
-// Copyright (C) 2020 MineNode
+// Copyright (C) 2021 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
