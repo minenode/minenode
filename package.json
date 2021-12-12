@@ -49,7 +49,7 @@
     "lint:fix": "eslint --fix --ext ts src test",
     "test": "tsc --noEmit && jest",
     "prepackage": "run-s build",
-    "package": "pkg --options -t node16-linux-x64,node16-win-x64,node16-macos-x64 --out-path dist --public --no-bytecode --compress brotli build/app.js"
+    "package": "pkg --options -t node16-linux-x64,node16-win-x64,node16-macos-x64 --out-path dist --public --no-bytecode build/app.js"
   },
   "pre-commit": {
     "run": [
