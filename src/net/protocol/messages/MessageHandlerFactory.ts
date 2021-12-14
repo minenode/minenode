@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "/server/Server";
+import Server from "../../../server/Server";
 import { MessageHandler } from "../Message";
-import { ConnectionState } from "/server/Connection";
+import { ConnectionState } from "../../../server/Connection";
 
 import { HandshakeMessageHandler } from "./handshake/serverbound/HandshakeMessage";
 import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage";

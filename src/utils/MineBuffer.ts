@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Long from "long";
 import * as uuid from "uuid";
 
 import BasicPosition3D from "./geometry/BasicPosition3D";
 import { IBasicPosition3D } from "./geometry/BasicPosition3D";
 import { Chat, isChat } from "./Chat";
+import { binary } from "./Natives";
 
 /**
  * A wrapper around a Buffer offering dynamic size and support for Minecraft protocol types.
@@ -154,9 +154,9 @@ export default class MineBuffer {
   /**
    * Read a signed 64-bit integer, two's complement.
    */
-  public readLong(): Long {
+  public readLong(): bigint {
     const bytes = this.readBytes(8);
-    return Long.fromBytesBE(Array.from(bytes), false);
+    return bytes.readBigInt64BE();
   }
 
   /**
@@ -196,18 +196,18 @@ export default class MineBuffer {
    * Returns a Long (long.js) object.
    * @throws {Error} if the VarLong is too large.
    */
-  public readVarLong(): Long {
+  public readVarLong(): bigint {
     let numRead = 0,
-      result = Long.ZERO;
+      result = 0n;
     let read;
     do {
       read = this.readByte();
-      const value = new Long(read & 0b01111111);
-      result = result.or(value.shiftLeft(7 * numRead));
+      const value = BigInt(read & 0b01111111);
+      result |= value << (7n * BigInt(numRead)); // result.or(value.shiftLeft(7 * numRead));
       numRead++;
       if (numRead > 10) throw new Error("VarLong is too big");
     } while ((read & 0b10000000) != 0);
-    return result;
+    return BigInt.asIntN(64, result);
   }
 
   /**
@@ -254,16 +254,18 @@ export default class MineBuffer {
    * Reads an integer X/Y/Z position from 8 bytes.
    */
   public readPosition(): BasicPosition3D {
-    const val = Long.fromBytesBE(Array.from(this.readBytes(8)), true);
-    let x = val.shiftRight(38).toSigned();
-    let y = val.and(0xfff).toSigned();
-    let z = val.shiftLeft(26).shiftRight(38).toSigned();
+    const value = this.buffer.readBigUInt64BE(this.readOffset);
+    this.readOffset += 8;
 
-    if (x.greaterThanOrEqual(2 ** 25)) x = x.sub(2 ** 26);
-    if (y.greaterThanOrEqual(2 ** 11)) y = y.sub(2 ** 12);
-    if (z.greaterThanOrEqual(2 ** 25)) z = z.sub(2 ** 26);
+    let x = value >> 38n;
+    let y = value & 0xfffn;
+    let z = (value & 0x3ffffff000n) >> 12n;
 
-    return new BasicPosition3D(x.toInt(), y.toInt(), z.toInt());
+    if (x >= 2n ** 25n) x -= 2n ** 26n;
+    if (y >= 2n ** 11n) y -= 2n ** 12n;
+    if (z >= 2n ** 25n) z -= 2n ** 26n;
+
+    return new BasicPosition3D(Number(x), Number(y), Number(z));
   }
 
   /**
@@ -278,9 +280,9 @@ export default class MineBuffer {
    * Appends many bytes to the buffer.
    * @param bytes the bytes to append
    */
-  public writeBytes(bytes: Buffer): this {
+  public writeBytes(bytes: Uint8Array): this {
     this.reserve(bytes.length);
-    bytes.copy(this.buffer, this.writeOffset);
+    this.buffer.set(bytes, this.writeOffset);
     this.writeOffset += bytes.length;
     return this;
   }
@@ -342,8 +344,10 @@ export default class MineBuffer {
    * Writes a 64-bit signed integer to the buffer.
    * @param value the value to write
    */
-  public writeLong(value: Long): this {
-    this.writeBytes(Buffer.from(value.toSigned().toBytesBE()));
+  public writeLong(value: bigint): this {
+    this.reserve(8);
+    this.buffer.writeBigInt64BE(value, this.writeOffset);
+    this.writeOffset += 8;
     return this;
   }
 
@@ -352,12 +356,10 @@ export default class MineBuffer {
    * @param pos the position to encode
    */
   public writePosition(pos: IBasicPosition3D): this {
-    const val = Long.fromInt(pos.x & 0x3ffffff, true)
-      .shiftLeft(38)
-      .or(Long.fromInt(pos.z & 0x3ffffff, true).shiftLeft(12))
-      .or(Long.fromInt(pos.y & 0xfff, true));
-    const bytes = Buffer.from(val.toBytesBE());
-    this.writeBytes(bytes);
+    this.reserve(8);
+    const value = (BigInt(pos.x & 0x3ffffff) << 38n) | (BigInt(pos.z & 0x3ffffff) << 12n) | BigInt(pos.y & 0xfff);
+    this.buffer.writeBigUInt64BE(value, this.writeOffset);
+    this.writeOffset += 8;
     return this;
   }
 
@@ -403,14 +405,22 @@ export default class MineBuffer {
    * Writes a variable-length Long (VarLong) to the buffer.
    * @param value the value to write
    */
-  public writeVarLong(value: Long): this {
-    do {
-      let temp = value.and(0b01111111);
-      value = value.shiftRightUnsigned(7);
-      if (value.notEquals(0)) temp = temp.or(0b10000000);
-      this.writeByte((temp.toInt() << 24) >> 24);
-    } while (value.notEquals(0));
-    return this;
+  public writeVarLong(value: bigint): this {
+    if (value < -0x8000000000000000n || value > 0x7fffffffffffffffn) {
+      throw new TypeError("value must be a 64-bit integer");
+    }
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if ((value & ~0x7fn) === 0n) {
+        this.writeByte(Number(value));
+        // break;
+        return this;
+      }
+
+      this.writeUByte(Number(value & 0x7fn) | 0x80);
+      value = binary.ussr(value, 7n); // value >>>= 7n;
+    }
   }
 
   /**

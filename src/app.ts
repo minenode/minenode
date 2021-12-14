@@ -49,4 +49,5 @@ assert(
 );
 
 const server = new Server(config);
+
 server.start();

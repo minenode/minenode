@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { MessageHandler } from "/net/protocol/Message";
-import Server from "/server/Server";
-import { ConnectionState } from "/server/Connection";
-import MineBuffer from "/utils/MineBuffer";
-import Connection from "/server/Connection";
+import { MessageHandler } from "../../../../../net/protocol/Message";
+import Server from "../../../../../server/Server";
+import { ConnectionState } from "../../../../../server/Connection";
+import MineBuffer from "../../../../../utils/MineBuffer";
+import Connection from "../../../../../server/Connection";
 import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
-import { GAME_VERSION, PROTOCOL_VERSION } from "/utils/Constants";
+import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
 
 export class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {

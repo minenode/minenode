@@ -223,10 +223,6 @@ export class Logger {
     return existing;
   }
 
-  public static getDefault(): Logger {
-    return Logger.getLogger("default");
-  }
-
   protected log(level: LogLevel, message: string, ...args: unknown[]): void {
     for (const consumer of this.consumers) {
       consumer["_log"](this.name, level, message, ...args);

@@ -1,4 +1,3 @@
-import Long from "long";
 import * as uuid from "uuid";
 
 import MineBuffer from "../../src/utils/MineBuffer";
@@ -42,7 +41,7 @@ test("read/write int", () => {
 });
 
 test("read/write long", () => {
-  const cases = ["-9223372036854775808", "-2147483648", "0", "2147483647", "9223372036854775807"].map(x => Long.fromString(x));
+  const cases = [-9223372036854775808n, -2147483648n, 0n, 2147483647n, 9223372036854775807n];
   for (const i of cases) {
     expect(buffer.writeLong(i).readLong().toString()).toEqual(i.toString());
   }
@@ -69,7 +68,7 @@ test("read/write VarInt", () => {
 });
 
 test("read/write VarLong", () => {
-  const cases = ["-9223372036854775808", "-2147483648", "0", "2147483647", "9223372036854775807"].map(x => Long.fromString(x));
+  const cases = [-9223372036854775808n, -2147483648n, 0n, 2147483647n, 9223372036854775807n];
   for (const i of cases) {
     expect(buffer.writeVarLong(i).readVarLong()).toEqual(i);
   }

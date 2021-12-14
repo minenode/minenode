@@ -24,9 +24,9 @@ import util from "util";
 import Connection, { getConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
 import { getRootDirectory } from "../utils/DeployUtils";
-import { Logger, LogLevel } from "/utils/Logger";
+import { Logger, LogLevel } from "../utils/Logger";
 import { StdoutConsumer, FileConsumer } from "../utils/Logger";
-import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "/utils/Constants";
+import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
 
 export interface ServerOptions {
   compressionThreshold: number;

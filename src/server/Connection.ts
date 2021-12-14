@@ -19,12 +19,12 @@ import util from "util";
 
 import { EventEmitter } from "eventemitter3";
 
-import MineBuffer from "/utils/MineBuffer";
-import { IClientboundMessage } from "/net/protocol/Message";
+import MineBuffer from "../utils/MineBuffer";
+import { IClientboundMessage } from "../net/protocol/Message";
 import EncryptionState from "./EncryptionState";
 import CompressionState from "./CompressionState";
-import { Chat, consoleFormatChat } from "/utils/Chat";
-import LoginDisconnectMessage from "/net/protocol/messages/login/clientbound/LoginDisconnectMessage";
+import { Chat, consoleFormatChat } from "../utils/Chat";
+import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
 import Server from "./Server";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;

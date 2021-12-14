@@ -14,15 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Long from "long";
-
-import { IClientboundMessage } from "/net/protocol/Message";
-import MineBuffer from "/utils/MineBuffer";
+import { IClientboundMessage } from "../../../../../net/protocol/Message";
+import MineBuffer from "../../../../../utils/MineBuffer";
 
 export default class StatusPongMessage implements IClientboundMessage {
   public id = 0x01;
 
-  public constructor(public payload: Long) {}
+  public constructor(public payload: bigint) {}
 
   public encode(buffer: MineBuffer): void {
     buffer.writeLong(this.payload);

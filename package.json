@@ -8,7 +8,6 @@
     "minenode": "./build/app.js"
   },
   "devDependencies": {
-    "@ef-carbon/tspm": "^2.2.5",
     "@swc-node/jest": "^1.4.1",
     "@types/jest": "^27.0.3",
     "@types/js-yaml": "^4.0.5",
@@ -27,27 +26,26 @@
     "pkg": "^5.5.1",
     "pre-commit": "^1.2.2",
     "prettier": "^2.5.1",
-    "typescript": "^4.5.3"
+    "typescript": "^4.5.3",
+    "wabt": "^1.0.24"
   },
   "dependencies": {
     "7zip-bin": "^5.1.1",
-    "@swc-node/register": "^1.4.0",
+    "@swc-node/register": "^1.4.1",
     "chalk": "^4.1.2",
     "eventemitter3": "^4.0.7",
     "js-yaml": "^4.1.0",
-    "long": "^5.2.0",
     "nbt": "^0.8.1",
     "node-7z": "^3.0.0",
     "superstruct": "^0.15.3",
-    "tsconfig-paths": "^3.12.0",
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "prestart": "run-s build",
-    "start": "node ./build/app.js",
+    "start": "node -r @swc-node/register ./src/app.ts",
     "debug": "cross-env MINENODE_DEBUG=1 run-s start",
-    "build": "tsc",
-    "postbuild": "ef-tspm -s",
+    "build:ts": "tsc",
+    "build:wasm": "wat2wasm ./wasm/binary.wat -o ./wasm/binary.wasm",
+    "build": "run-s build:ts build:wasm",
     "lint": "eslint --ext ts src test",
     "lint:fix": "eslint --fix --ext ts src test",
     "test": "tsc --noEmit && jest",
