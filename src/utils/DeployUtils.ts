@@ -43,3 +43,15 @@ export function getRootDirectory(): string {
     return dirname;
   }
 }
+
+/**
+ * Returns the path to the Wasm directory.
+ * Note that this function will return a snapshot path if the application is running from a pkg executable.
+ */
+export function getWasmDirectory(): string {
+  if (isRunningFromPkg()) {
+    return path.join(__dirname, "..", "..", "wasm");
+  } else {
+    return path.join(getRootDirectory(), "wasm");
+  }
+}

@@ -17,7 +17,7 @@
 import fs from "fs";
 import path from "path";
 
-import { getRootDirectory } from "./DeployUtils";
+import { getWasmDirectory } from "./DeployUtils";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const WebAssembly: any;
@@ -32,7 +32,7 @@ export function loadWebAssembly<Exports extends Record<string, unknown>, Imports
   moduleName: string,
   imports?: Imports,
 ): Exports {
-  const modulePath = path.join(getRootDirectory(), "wasm", `${moduleName}.wasm`);
+  const modulePath = path.join(getWasmDirectory(), `${moduleName}.wasm`);
   const buffer = fs.readFileSync(modulePath);
   const module = new WebAssembly.Module(buffer);
   const instance = new WebAssembly.Instance(module, imports);

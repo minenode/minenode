@@ -46,7 +46,7 @@
     "debug": "cross-env MINENODE_DEBUG=1 nodemon -w ./src --exec 'yarn start' --ext ts",
     "build:ts": "tsc",
     "build:wasm": "wat2wasm ./wasm/binary.wat -o ./wasm/binary.wasm",
-    "build": "run-s build:ts build:wasm",
+    "build": "run-p build:ts build:wasm",
     "lint": "eslint --ext ts src test",
     "lint:fix": "eslint --fix --ext ts src test",
     "pretest": "run-s build:wasm",
@@ -64,7 +64,8 @@
   },
   "pkg": {
     "assets": [
-      "node_modules/7zip-bin/**/*"
+      "node_modules/7zip-bin/**/*",
+      "wasm/**/*.wasm"
     ],
     "targets": [
       "node16-linux-x64",
