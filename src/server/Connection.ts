@@ -36,14 +36,6 @@ export enum ConnectionState {
   PLAY = 3,
 }
 
-export function getConnectionState(state: number): "HANDSHAKE" | "STATUS" | "LOGIN" | "PLAY" | null {
-  if (state === ConnectionState.HANDSHAKE) return "HANDSHAKE";
-  if (state === ConnectionState.STATUS) return "STATUS";
-  if (state === ConnectionState.LOGIN) return "LOGIN";
-  if (state === ConnectionState.PLAY) return "PLAY";
-  return null;
-}
-
 /**
  * A wrapper class around an incoming TCP socket. Handles message framing, encryption, etc.
  */

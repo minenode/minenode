@@ -22,6 +22,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^27.4.4",
+    "nodemon": "^2.0.15",
     "npm-run-all": "^4.1.5",
     "pkg": "^5.5.1",
     "pre-commit": "^1.2.2",
@@ -42,7 +43,7 @@
   },
   "scripts": {
     "start": "node -r @swc-node/register ./src/app.ts",
-    "debug": "cross-env MINENODE_DEBUG=1 run-s start",
+    "debug": "cross-env MINENODE_DEBUG=1 nodemon -w ./src --exec 'yarn start' --ext ts",
     "build:ts": "tsc",
     "build:wasm": "wat2wasm ./wasm/binary.wat -o ./wasm/binary.wasm",
     "build": "run-s build:ts build:wasm",

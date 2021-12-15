@@ -18,15 +18,26 @@ import { IClientboundMessage } from "../../../../../net/protocol/Message";
 import PositionYP from "../../../../../utils/geometry/PositionYP";
 import MineBuffer from "../../../../../utils/MineBuffer";
 
-export class PlaylientboundPositionAndLookMessage implements IClientboundMessage {
-  public id = 0x34;
+export interface PlayClientboundPositionAndLookMessageOptions {
+  position: PositionYP;
+  flags: { x: boolean; y: boolean; z: boolean; y_rot: boolean; x_rot: boolean };
+  teleportId: number;
+  dismountVehicle: boolean;
+}
+
+export class PlayClientboundPositionAndLookMessage implements IClientboundMessage {
+  public id = 0x38;
 
   public position: PositionYP;
   public flags: { x: boolean; y: boolean; z: boolean; y_rot: boolean; x_rot: boolean };
+  public teleportId: number;
+  public dismountVehicle: boolean;
 
-  public constructor(options: { position: PositionYP; flags: { x: boolean; y: boolean; z: boolean; y_rot: boolean; x_rot: boolean } }) {
+  public constructor(options: PlayClientboundPositionAndLookMessageOptions) {
     this.position = options.position;
     this.flags = options.flags;
+    this.teleportId = options.teleportId;
+    this.dismountVehicle = options.dismountVehicle;
   }
 
   public encode(buffer: MineBuffer): void {
@@ -39,6 +50,7 @@ export class PlaylientboundPositionAndLookMessage implements IClientboundMessage
       .writeUByte(
         (this.flags.x ? 0x01 : 0) | (this.flags.y ? 0x02 : 0) | (this.flags.z ? 0x04 : 0) | (this.flags.y_rot ? 0x08 : 0) | (this.flags.x_rot ? 0x10 : 0),
       )
-      .writeVarInt(0); // TODO: teleport ID
+      .writeVarInt(this.teleportId)
+      .writeBoolean(this.dismountVehicle);
   }
 }

@@ -23,6 +23,7 @@ import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage
 import { StatusRequestMessageHandler } from "./status/serverbound/StatusRequestMessage";
 import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
 import { LoginEncryptionResponseMessage } from "./login/serverbound/LoginEncryptionResponseMessage";
+import { PlayServerboundPlayerPositionMessage } from "./play/serverbound/PlayServerboundPlayerPositionMessage";
 
 export default class MessageHandlerFactory {
   public readonly registered: Set<MessageHandler> = new Set();
@@ -33,7 +34,8 @@ export default class MessageHandlerFactory {
       .add(new StatusPingMessageHandler(this.server))
       .add(new StatusRequestMessageHandler(this.server))
       .add(new LoginEncryptionResponseMessage(this.server))
-      .add(new LoginStartMessage(this.server));
+      .add(new LoginStartMessage(this.server))
+      .add(new PlayServerboundPlayerPositionMessage(this.server));
   }
 
   public getHandler(id: number, state: ConnectionState): MessageHandler | null {

@@ -21,7 +21,7 @@ import path from "path";
 import crypto from "crypto";
 import util from "util";
 
-import Connection, { getConnectionState } from "./Connection";
+import Connection, { ConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
 import { getRootDirectory } from "../utils/DeployUtils";
 import { Logger, LogLevel } from "../utils/Logger";
@@ -35,13 +35,19 @@ export interface ServerOptions {
   favicon?: string;
 }
 
-export default class Server extends EventEmitter {
+export default class Server extends EventEmitter<{
+  tick: [number];
+}> {
   public tcpServer: net.Server = new net.Server();
   public connections: Set<Connection> = new Set();
   public handlerFactory: MessageHandlerFactory;
 
   public encodedFavicon?: string;
   public keypair!: crypto.KeyPairKeyObjectResult;
+
+  public tickCount = 0;
+  public ticker: NodeJS.Timer | null = null;
+  private running = false;
 
   public readonly logger = new Logger("Server")
     .withConsumer(new StdoutConsumer({ minLevel: process.env.MINENODE_DEBUG ? LogLevel.DEBUG : LogLevel.INFO }))
@@ -93,7 +99,26 @@ export default class Server extends EventEmitter {
     this.generateKeyPair();
     // TODO: config in constructor
     this.tcpServer.listen(25565, "0.0.0.0");
+    // Start tick
+    this.running = true;
+    this.ticker = setInterval(this._tick.bind(this), 1000 / 20);
     this.logger.info(`server listening`);
+  }
+
+  protected _tick(): void {
+    this.tickCount++;
+    this.emit("tick", this.tickCount);
+  }
+
+  public nextTick(): Promise<number> {
+    if (!this.running) {
+      return Promise.reject(new Error("Server is not running"));
+    }
+    return new Promise(resolve => {
+      this.once("tick", tick => {
+        resolve(tick);
+      });
+    });
   }
 
   protected _onSocketConnect(socket: net.Socket): void {
@@ -127,7 +152,9 @@ export default class Server extends EventEmitter {
       } else {
         // TODO handle
         this.logger.error(
-          `${connection.remote}: invalid message (state = ${getConnectionState(connection.state)} [${connection.state}]), id = ${msg.packetID})`,
+          `${connection.remote}: invalid message (state = ${ConnectionState[connection.state]} [${connection.state}]), id = ${msg.packetID} / 0x${msg.packetID
+            .toString(16)
+            .padStart(2, "0")})`,
         );
       }
     });

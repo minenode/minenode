@@ -133,9 +133,6 @@ export type EncodableArray =
   | BigInt64Array[]
   | { [key: string]: Encodable }[];
 
-// type Native = undefined | Byte | Short | Int | bigint | Float | Double | string | Uint8Array | Int32Array | BigInt64Array;
-// export type Encodable = Native | Encodable[] | { [key: string]: Encodable };
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T, A extends any[] = any[]> = new (...args: A) => T;
 
@@ -316,13 +313,14 @@ export class Encoder {
         break;
       case TagType.IntArray:
         this.buffer.writeInt((tag as Tag<TagType.IntArray, Int32Array>).value.length);
+        this.buffer.reserve((tag as Tag<TagType.IntArray, Int32Array>).value.length * 4);
         for (const value of (tag as Tag<TagType.IntArray, Int32Array>).value) {
           this.buffer.writeInt(value);
-          // TODO: Optimize writing of Int32Arrays
         }
         break;
       case TagType.LongArray:
         this.buffer.writeInt((tag as Tag<TagType.LongArray, BigInt64Array>).value.length);
+        this.buffer.reserve((tag as Tag<TagType.LongArray, BigInt64Array>).value.length * 8);
         for (const value of (tag as Tag<TagType.LongArray, BigInt64Array>).value) {
           this.buffer.writeLong(value);
         }
