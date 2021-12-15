@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: minenode-windows-x64
-          path: dist/minenode-windows.exe
+          path: dist/minenode-win.exe
       - name: Publish (Linux x64)
         uses: actions/upload-artifact@v2
         with:
