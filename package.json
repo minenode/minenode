@@ -49,7 +49,10 @@
     "build": "run-s build:ts build:wasm",
     "lint": "eslint --ext ts src test",
     "lint:fix": "eslint --fix --ext ts src test",
-    "test": "tsc --noEmit && jest",
+    "pretest": "run-s build:wasm",
+    "test:ts": "tsc --noEmit",
+    "test:jest": "jest",
+    "test": "run-p test:ts test:jest",
     "prepackage": "run-s build",
     "package": "pkg package.json"
   },
