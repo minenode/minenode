@@ -55,8 +55,18 @@ jobs:
         run: yarn build
       - name: Package
         run: yarn package
-      - name: Publish
+      - name: Publish (Windows x64)
         uses: actions/upload-artifact@v2
         with:
-          name: dist
-          path: dist
+          name: minenode-windows-x64
+          path: dist/minenode-windows.exe
+      - name: Publish (Linux x64)
+        uses: actions/upload-artifact@v2
+        with:
+          name: minenode-linux-x64
+          path: dist/minenode-linux
+      - name: Publish (MacOS x64)
+        uses: actions/upload-artifact@v2
+        with:
+          name: minenode-macos-x64
+          path: dist/minenode-macos
