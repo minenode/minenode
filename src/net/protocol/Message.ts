@@ -15,9 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import Server from "../../server/Server";
-import Player from "../../server/Player";
+import { Player } from "../../server/Player";
 import MineBuffer from "../../utils/MineBuffer";
-import Connection, { ConnectionState } from "../../server/Connection";
+import { ConnectionState } from "../../server/Connection";
 
 export interface MessageHandlerOptions {
   state: ConnectionState;
@@ -39,7 +39,7 @@ export abstract class MessageHandler {
     this.server = options.server;
   }
 
-  public abstract handle(buffer: MineBuffer, player: Connection | Player): void;
+  public abstract handle(buffer: MineBuffer, player: Player): void;
 }
 
 export interface IClientboundMessage {

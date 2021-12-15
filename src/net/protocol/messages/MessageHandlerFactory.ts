@@ -24,6 +24,11 @@ import { StatusRequestMessageHandler } from "./status/serverbound/StatusRequestM
 import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
 import { LoginEncryptionResponseMessage } from "./login/serverbound/LoginEncryptionResponseMessage";
 import { PlayServerboundPlayerPositionMessage } from "./play/serverbound/PlayServerboundPlayerPositionMessage";
+import { PlayServerboundClientSettingsMessage } from "./play/serverbound/PlayServerboundClientSettingsMessage";
+import { PlayServerboundPluginMessage } from "./play/serverbound/PlayServerboundPluginMessage";
+import { PlayServerboundTeleportConfirmMessage } from "./play/serverbound/PlayServerboundTeleportConfirmMessage";
+import { PlayServerboundPlayerPositionAndRotationMessage } from "./play/serverbound/PlayServerboundPlayerPositionAndRotationMessage";
+import { PlayServerboundKeepAliveMessage } from "./play/serverbound/PlayServerboundKeepAliveMessage";
 
 export default class MessageHandlerFactory {
   public readonly registered: Set<MessageHandler> = new Set();
@@ -35,7 +40,12 @@ export default class MessageHandlerFactory {
       .add(new StatusRequestMessageHandler(this.server))
       .add(new LoginEncryptionResponseMessage(this.server))
       .add(new LoginStartMessage(this.server))
-      .add(new PlayServerboundPlayerPositionMessage(this.server));
+      .add(new PlayServerboundPlayerPositionMessage(this.server))
+      .add(new PlayServerboundClientSettingsMessage(this.server))
+      .add(new PlayServerboundPluginMessage(this.server))
+      .add(new PlayServerboundTeleportConfirmMessage(this.server))
+      .add(new PlayServerboundPlayerPositionAndRotationMessage(this.server))
+      .add(new PlayServerboundKeepAliveMessage(this.server));
   }
 
   public getHandler(id: number, state: ConnectionState): MessageHandler | null {

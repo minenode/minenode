@@ -16,11 +16,12 @@
 
 import Server from "../../../../../server/Server";
 import MineBuffer from "../../../../../utils/MineBuffer";
-import Connection, { ConnectionState } from "../../../../../server/Connection";
+import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import StatusResponseMessage from "../clientbound/StatusResponseMessage";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
 import { formatChat } from "../../../../../utils/Chat";
+import { Player } from "../../../../../server/Player";
 
 export class StatusRequestMessageHandler extends MessageHandler {
   public constructor(server: Server) {
@@ -32,7 +33,7 @@ export class StatusRequestMessageHandler extends MessageHandler {
     });
   }
 
-  public handle(_buffer: MineBuffer, player: Connection): void {
+  public handle(_buffer: MineBuffer, player: Player): void {
     const response = new StatusResponseMessage({
       version: {
         name: GAME_VERSION,
@@ -40,13 +41,13 @@ export class StatusRequestMessageHandler extends MessageHandler {
       },
       players: {
         max: this.server.options.maxPlayers,
-        online: [...this.server.connections].filter(conn => conn.state === ConnectionState.PLAY).length, // TODO: this should be players, not connections
+        online: [...this.server.players].filter(conn => conn.connection.state === ConnectionState.PLAY).length, // TODO: this should be players, not connections
         sample: [], // TODO
       },
       description: formatChat(this.server.options.motd, "&"),
       favicon: this.server.encodedFavicon,
     });
-    player.writeMessage(response);
-    this.server.logger.debug(`${player.remote}: status request`);
+    player.sendPacket(response);
+    this.server.logger.debug(`${player.connection.remote}: status request`);
   }
 }

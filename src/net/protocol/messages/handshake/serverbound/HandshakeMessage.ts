@@ -16,8 +16,9 @@
 
 import Server from "../../../../../server/Server";
 import MineBuffer from "../../../../../utils/MineBuffer";
-import Connection, { ConnectionState } from "../../../../../server/Connection";
+import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
+import { Player } from "../../../../../server/Player";
 
 export class HandshakeMessageHandler extends MessageHandler {
   public constructor(server: Server) {
@@ -29,23 +30,23 @@ export class HandshakeMessageHandler extends MessageHandler {
     });
   }
 
-  public handle(buffer: MineBuffer, player: Connection): void {
+  public handle(buffer: MineBuffer, player: Player): void {
     const protocolVersion = buffer.readVarInt();
     const serverAddress = buffer.readString();
     const serverPort = buffer.readUShort();
     const nextState = buffer.readVarInt();
 
     if (nextState !== ConnectionState.STATUS && nextState !== ConnectionState.LOGIN) {
-      this.server.logger.error(`${player.remote}: Invalid nextState: ${nextState}. Disconnecting.`);
-      player.hardDisconnect();
+      this.server.logger.error(`${player.connection.remote}: Invalid nextState: ${nextState}. Disconnecting.`);
+      player.connection.hardDisconnect();
       return;
     }
 
-    player.clientProtocol = protocolVersion;
-    player.state = nextState;
+    player.connection.clientProtocol = protocolVersion;
+    player.connection.state = nextState;
 
     const serverIP = `${serverAddress}:${serverPort}`;
 
-    this.server.logger.debug(`${player.remote}: handshake (server = ${serverIP}, protocol = ${protocolVersion}, nextState = ${nextState})`);
+    this.server.logger.debug(`${player.connection.remote}: handshake (server = ${serverIP}, protocol = ${protocolVersion}, nextState = ${nextState})`);
   }
 }

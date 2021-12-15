@@ -17,10 +17,21 @@
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
 import MineBuffer from "../../../../../utils/MineBuffer";
 
+export interface LoginSuccessMessageOptions {
+  uuid: string;
+  username: string;
+}
+
 export default class LoginSuccessMessage implements IClientboundMessage {
   public id = 0x02;
 
-  public constructor(public uuid: string, public username: string) {}
+  public uuid: string;
+  public username: string;
+
+  public constructor(options: LoginSuccessMessageOptions) {
+    this.uuid = options.uuid;
+    this.username = options.username;
+  }
 
   public encode(buffer: MineBuffer): void {
     buffer.writeUUID(this.uuid).writeString(this.username);

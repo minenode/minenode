@@ -33,7 +33,7 @@ export enum LogLevel {
 }
 
 export const defaultColors: Readonly<Record<LogLevel, chalk.Chalk>> = Object.freeze({
-  [LogLevel.DEBUG]: chalk.bgBlue.whiteBright,
+  [LogLevel.DEBUG]: chalk.greenBright,
   [LogLevel.INFO]: chalk.grey,
   [LogLevel.WARN]: chalk.yellow,
   [LogLevel.ERROR]: chalk.red,

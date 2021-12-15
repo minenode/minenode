@@ -1,4 +1,4 @@
-// PlayServerboundPlayerPositionMessage.ts - handle Player Position messages
+// PlayServerboundPlayerPositionAndRotationMessage.ts - handle Player Position And Rotation messages
 // Copyright (C) 2021 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,15 +18,15 @@ import Server from "../../../../../server/Server";
 import MineBuffer from "../../../../../utils/MineBuffer";
 import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
+import { Vec5 } from "../../../../../utils/Geometry";
 import { Player } from "../../../../../server/Player";
-import { Vec3 } from "../../../../../utils/Geometry";
 
-export class PlayServerboundPlayerPositionMessage extends MessageHandler {
+export class PlayServerboundPlayerPositionAndRotationMessage extends MessageHandler {
   public constructor(server: Server) {
     super({
       state: ConnectionState.PLAY,
-      id: 0x11,
-      label: "player position",
+      id: 0x12,
+      label: "player position and rotation",
       server,
     });
   }
@@ -35,13 +35,15 @@ export class PlayServerboundPlayerPositionMessage extends MessageHandler {
     const x = buffer.readDouble();
     const y = buffer.readDouble();
     const z = buffer.readDouble();
+    const yaw = buffer.readFloat();
+    const pitch = buffer.readFloat();
     const onGround = buffer.readBoolean();
 
-    const newPos = new Vec3(x, y, z);
+    const newPos = new Vec5(x, y, z, yaw, pitch);
 
     const distance = newPos.distance(player.position);
-
     if (distance > 10) {
+      // TODO: anti-cheat etc.
       player.disconnect(`Player moved too far (distance = ${distance})`);
       return;
     }
@@ -68,7 +70,9 @@ export class PlayServerboundPlayerPositionMessage extends MessageHandler {
     player.position.x = x;
     player.position.y = y;
     player.position.z = z;
+    player.position.yaw = yaw;
+    player.position.pitch = pitch;
 
-    // this.server.logger.debug(`${player.connection.remote}: player position (x = ${x}, y = ${y}, z = ${z}, onGround = ${onGround})`);
+    // this.server.logger.debug(`${player.connection.remote}: player position and rotation ${pos} (onGround = ${onGround})`);
   }
 }

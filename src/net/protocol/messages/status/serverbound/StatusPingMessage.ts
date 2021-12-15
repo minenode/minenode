@@ -16,9 +16,10 @@
 
 import Server from "../../../../../server/Server";
 import MineBuffer from "../../../../../utils/MineBuffer";
-import Connection, { ConnectionState } from "../../../../../server/Connection";
+import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import StatusPongMessage from "../clientbound/StatusPongMessage";
+import { Player } from "../../../../../server/Player";
 
 export class StatusPingMessageHandler extends MessageHandler {
   public constructor(server: Server) {
@@ -30,12 +31,12 @@ export class StatusPingMessageHandler extends MessageHandler {
     });
   }
 
-  public handle(buffer: MineBuffer, player: Connection): void {
+  public handle(buffer: MineBuffer, player: Player): void {
     const payload = buffer.readLong();
 
     const response = new StatusPongMessage(payload);
-    player.writeMessage(response);
+    player.sendPacket(response);
 
-    this.server.logger.debug(`${player.remote}: status ping (payload = ${payload})`);
+    this.server.logger.debug(`${player.connection.remote}: status ping (payload = ${payload})`);
   }
 }

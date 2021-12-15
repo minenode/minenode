@@ -15,11 +15,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
-import PositionYP from "../../../../../utils/geometry/PositionYP";
 import MineBuffer from "../../../../../utils/MineBuffer";
+import { Vec5 } from "../../../../../utils/Geometry";
 
 export interface PlayClientboundPositionAndLookMessageOptions {
-  position: PositionYP;
+  position: Vec5;
   flags: { x: boolean; y: boolean; z: boolean; y_rot: boolean; x_rot: boolean };
   teleportId: number;
   dismountVehicle: boolean;
@@ -28,7 +28,7 @@ export interface PlayClientboundPositionAndLookMessageOptions {
 export class PlayClientboundPositionAndLookMessage implements IClientboundMessage {
   public id = 0x38;
 
-  public position: PositionYP;
+  public position: Vec5;
   public flags: { x: boolean; y: boolean; z: boolean; y_rot: boolean; x_rot: boolean };
   public teleportId: number;
   public dismountVehicle: boolean;

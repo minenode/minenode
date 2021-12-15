@@ -16,8 +16,8 @@
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
 import MineBuffer from "../../../../../utils/MineBuffer";
-import { GameMode } from "../../../../../utils/DataTypes";
-import { Encodable, Encoder } from "../../../../../data/NBT";
+import { GameMode } from "../../../../../utils/Enums";
+import { Encodable } from "../../../../../data/NBT";
 
 export interface PlayClientboundJoinGameMessageOptions {
   entityId: number;
@@ -90,8 +90,8 @@ export class PlayClientboundJoinGameMessage implements IClientboundMessage {
     }
 
     buffer
-      .writeBytes(new Encoder().encode(this.dimensionCodec, { name: "" }).buffer.getBuffer())
-      .writeBytes(new Encoder().encode(this.dimension, { name: "" }).buffer.getBuffer())
+      .writeNBT(this.dimensionCodec, { name: "" })
+      .writeNBT(this.dimension, { name: "" })
       .writeString(this.worldName)
       .writeLong(this.hashedSeed)
       .writeVarInt(this.maxPlayers)

@@ -1,4 +1,4 @@
-// PlayClientboundPluginMessage.ts - creates Plugin messages
+// PlayClientboundServerDifficultyMessage.ts - creates Plugin messages
 // Copyright (C) 2021 MineNode
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,27 +14,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { PluginChannel } from "../../../../../utils/Enums";
 import MineBuffer from "../../../../../utils/MineBuffer";
 import { IClientboundMessage } from "../../../Message";
+import { Difficulty } from "../../../../../utils/Enums";
 
-export interface PlayClientboundPluginMessageOptions {
-  channel: PluginChannel; // TODO: identifier type (lowercase/:)
-  data: MineBuffer; // TODO: Plugin channel data type
+export interface PlayClientboundServerDifficultyMessageOptions {
+  difficulty: Difficulty;
+  difficultyLocked: boolean;
 }
 
-export class PlayClientboundPluginMessage implements IClientboundMessage {
-  public id = 0x18;
+export class PlayClientboundServerDifficultyMessage implements IClientboundMessage {
+  public id = 0x0e;
 
-  public channel: PluginChannel; // TODO: identifier type (lowercase/:)
-  public data: MineBuffer; // TODO: Plugin channel data type
+  public difficulty: Difficulty;
+  public difficultyLocked: boolean;
 
-  public constructor(options: PlayClientboundPluginMessageOptions) {
-    this.channel = options.channel;
-    this.data = options.data;
+  public constructor(options: PlayClientboundServerDifficultyMessageOptions) {
+    this.difficulty = options.difficulty;
+    this.difficultyLocked = options.difficultyLocked;
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeString(this.channel).writeBytes(this.data.getBuffer());
+    buffer.writeUByte(this.difficulty).writeBoolean(this.difficultyLocked);
   }
 }

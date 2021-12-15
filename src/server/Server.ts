@@ -27,6 +27,7 @@ import { getRootDirectory } from "../utils/DeployUtils";
 import { Logger, LogLevel } from "../utils/Logger";
 import { StdoutConsumer, FileConsumer } from "../utils/Logger";
 import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
+import { Player } from "./Player";
 
 export interface ServerOptions {
   compressionThreshold: number;
@@ -37,9 +38,11 @@ export interface ServerOptions {
 
 export default class Server extends EventEmitter<{
   tick: [number];
+  playerJoin: [Player];
 }> {
   public tcpServer: net.Server = new net.Server();
-  public connections: Set<Connection> = new Set();
+  // public connections: Set<Connection> = new Set();
+  public players: Set<Player> = new Set();
   public handlerFactory: MessageHandlerFactory;
 
   public encodedFavicon?: string;
@@ -48,6 +51,8 @@ export default class Server extends EventEmitter<{
   public tickCount = 0;
   public ticker: NodeJS.Timer | null = null;
   private running = false;
+
+  protected _nextEntityId = 1;
 
   public readonly logger = new Logger("Server")
     .withConsumer(new StdoutConsumer({ minLevel: process.env.MINENODE_DEBUG ? LogLevel.DEBUG : LogLevel.INFO }))
@@ -108,6 +113,9 @@ export default class Server extends EventEmitter<{
   protected _tick(): void {
     this.tickCount++;
     this.emit("tick", this.tickCount);
+    for (const player of this.players) {
+      player["_tick"](this.tickCount);
+    }
   }
 
   public nextTick(): Promise<number> {
@@ -127,28 +135,30 @@ export default class Server extends EventEmitter<{
     connection.compression.setThreshold(this.options.compressionThreshold);
 
     this.logger.info(`${connection.remote}: connected`);
-    this.connections.add(connection);
+
+    const player = new Player(this, connection);
+    this.players.add(player);
 
     // Bind connection events
-    // TODO: move this to Player class
+    // TODO: move this to Player class?
     connection.on("disconnect", () => {
       this.logger.info(`${connection.remote}: disconnected`);
-      this.connections.delete(connection);
+      this.players.delete(player);
     });
 
     connection.on("message", msg => {
-      this.logger.debug(`${connection.remote}: message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv`);
+      // this.logger.debug(`${connection.remote}: message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv`);
 
       const handler = this.handlerFactory.getHandler(msg.packetID, connection.state);
 
       if (handler) {
         try {
-          handler.handle(msg.payload, connection);
+          handler.handle(msg.payload, player);
         } catch (err) {
           this.logger.error(util.inspect(err));
           connection.disconnect({ text: String(err), color: "red" });
         }
-        this.logger.debug(`${connection.remote}: message '${handler.label}' handled`);
+        // this.logger.debug(`${connection.remote}: message '${handler.label}' handled`);
       } else {
         // TODO handle
         this.logger.error(

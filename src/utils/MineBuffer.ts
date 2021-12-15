@@ -16,10 +16,10 @@
 
 import * as uuid from "uuid";
 
-import BasicPosition3D from "./geometry/BasicPosition3D";
-import { IBasicPosition3D } from "./geometry/BasicPosition3D";
 import { Chat, isChat } from "./Chat";
 import { binary } from "./Natives";
+import { Vec3, IVec3 } from "./Geometry";
+import { EncodeOptions, NBTTag, Encoder, Decoder, DecodeOptions, Encodable } from "../data/NBT";
 
 /**
  * A wrapper around a Buffer offering dynamic size and support for Minecraft protocol types.
@@ -253,7 +253,7 @@ export default class MineBuffer {
   /**
    * Reads an integer X/Y/Z position from 8 bytes.
    */
-  public readPosition(): BasicPosition3D {
+  public readPosition(): Vec3 {
     const value = this.buffer.readBigUInt64BE(this.readOffset);
     this.readOffset += 8;
 
@@ -265,7 +265,7 @@ export default class MineBuffer {
     if (y >= 2n ** 11n) y -= 2n ** 12n;
     if (z >= 2n ** 25n) z -= 2n ** 26n;
 
-    return new BasicPosition3D(Number(x), Number(y), Number(z));
+    return new Vec3(Number(x), Number(y), Number(z));
   }
 
   /**
@@ -274,6 +274,14 @@ export default class MineBuffer {
   public readUUID(): string {
     const bytes = this.readBytes(16);
     return uuid.stringify(bytes);
+  }
+
+  /**
+   * Reads NBT-encoded data from the buffer.
+   */
+  public readNBT<T extends Encodable = Encodable>(options: DecodeOptions = {}): T {
+    const decoder = new Decoder(this, false); // TODO: support compressed NBT; will need to rework decoder to not unpack the whole buffer
+    return decoder.decode(options) as T;
   }
 
   /**
@@ -355,7 +363,7 @@ export default class MineBuffer {
    * Encodes an integer X/Y/Z position to a 64-bit value.
    * @param pos the position to encode
    */
-  public writePosition(pos: IBasicPosition3D): this {
+  public writePosition(pos: IVec3): this {
     this.reserve(8);
     const value = (BigInt(pos.x & 0x3ffffff) << 38n) | (BigInt(pos.z & 0x3ffffff) << 12n) | BigInt(pos.y & 0xfff);
     this.buffer.writeBigUInt64BE(value, this.writeOffset);
@@ -462,6 +470,16 @@ export default class MineBuffer {
     this.reserve(2);
     this.buffer.writeUInt16BE(value, this.writeOffset);
     this.writeOffset += 2;
+    return this;
+  }
+
+  /**
+   * Writes NBT-encoded data to the buffer.
+   * @param value the NBT to encode
+   */
+  public writeNBT(tag: Encodable | NBTTag, options: EncodeOptions = {}): this {
+    const encoder = new Encoder(this);
+    encoder.encode(tag, options);
     return this;
   }
 }

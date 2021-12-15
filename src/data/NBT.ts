@@ -18,7 +18,7 @@ import { Assert } from "../utils/Logic";
 import MineBuffer from "../utils/MineBuffer";
 import * as zlib from "zlib";
 
-export enum TagType {
+export enum NBTTagType {
   End = 0,
   Byte = 1,
   Short = 2,
@@ -174,46 +174,46 @@ export function isEncodable(value: unknown): value is Encodable {
   return false;
 }
 
-export function getType<T extends Encodable>(value: T): TagType {
+export function getType<T extends Encodable>(value: T): NBTTagType {
   if (!isEncodable(value)) {
     throw new Error("Value is not encodable");
   } else if (value === undefined) {
-    return TagType.End;
+    return NBTTagType.End;
   } else if (value instanceof Byte) {
-    return TagType.Byte;
+    return NBTTagType.Byte;
   } else if (value instanceof Short) {
-    return TagType.Short;
+    return NBTTagType.Short;
   } else if (value instanceof Int) {
-    return TagType.Int;
+    return NBTTagType.Int;
   } else if (value instanceof Float) {
-    return TagType.Float;
+    return NBTTagType.Float;
   } else if (value instanceof Double) {
-    return TagType.Double;
+    return NBTTagType.Double;
   } else if (typeof value === "bigint") {
-    return TagType.Long;
+    return NBTTagType.Long;
   } else if (value instanceof Uint8Array || isArrayOf(value, Byte)) {
-    return TagType.ByteArray;
+    return NBTTagType.ByteArray;
   } else if (typeof value === "string") {
-    return TagType.String;
+    return NBTTagType.String;
   } else if (isArrayOf<Encodable>(value, isEncodable)) {
-    return TagType.List;
+    return NBTTagType.List;
   } else if (value instanceof Int32Array || isArrayOf(value, Int)) {
-    return TagType.IntArray;
+    return NBTTagType.IntArray;
   } else if (value instanceof BigInt64Array || isArrayOf<bigint>(value, "bigint")) {
-    return TagType.LongArray;
+    return NBTTagType.LongArray;
   } else if (
     typeof value === "object" &&
     value !== null &&
     Object.getPrototypeOf(value) === Object.prototype &&
     Object.values(value as object).every(isEncodable)
   ) {
-    return TagType.Compound;
+    return NBTTagType.Compound;
   } else {
     throw new Error("Value is not encodable (fall-through)");
   }
 }
 
-export class Tag<T extends TagType = TagType, V extends Encodable = Encodable> {
+export class NBTTag<T extends NBTTagType = NBTTagType, V extends Encodable = Encodable> {
   public readonly type: T;
   public value: V;
   public name?: string;
@@ -225,11 +225,11 @@ export class Tag<T extends TagType = TagType, V extends Encodable = Encodable> {
   }
 }
 
-export function tag<T extends TagType = TagType, V extends Encodable = Encodable>(type: T, value: V, name?: string): Tag<T, V> {
-  return new Tag(type, value, name);
+export function tag<T extends NBTTagType = NBTTagType, V extends Encodable = Encodable>(type: T, value: V, name?: string): NBTTag<T, V> {
+  return new NBTTag(type, value, name);
 }
 
-interface EncodeOptions {
+export interface EncodeOptions {
   name?: boolean | string;
   type?: boolean;
   gzip?: boolean;
@@ -242,8 +242,8 @@ export class Encoder {
     this.buffer = buffer;
   }
 
-  public encode(value: Encodable | Tag, options: EncodeOptions = {}): this {
-    this.encodeTag(value instanceof Tag ? value : tag(getType(value), value), options);
+  public encode(value: Encodable | NBTTag, options: EncodeOptions = {}): this {
+    this.encodeTag(value instanceof NBTTag ? value : tag(getType(value), value), options);
     if (options.gzip) {
       const zipped = zlib.gzipSync(this.buffer.getBuffer());
       this.buffer.reset().writeBytes(zipped);
@@ -251,7 +251,7 @@ export class Encoder {
     return this;
   }
 
-  protected encodeTag(tag: Tag, options: EncodeOptions = {}): this {
+  protected encodeTag(tag: NBTTag, options: EncodeOptions = {}): this {
     if (options.type ?? true) {
       this.buffer.writeByte(tag.type);
     }
@@ -263,65 +263,65 @@ export class Encoder {
       }
     }
     switch (tag.type) {
-      case TagType.End:
+      case NBTTagType.End:
         break;
-      case TagType.Byte:
-        this.buffer.writeByte((tag as Tag<TagType.Byte, Byte>).value.value);
+      case NBTTagType.Byte:
+        this.buffer.writeByte((tag as NBTTag<NBTTagType.Byte, Byte>).value.value);
         break;
-      case TagType.Short:
-        this.buffer.writeShort((tag as Tag<TagType.Short, Short>).value.value);
+      case NBTTagType.Short:
+        this.buffer.writeShort((tag as NBTTag<NBTTagType.Short, Short>).value.value);
         break;
-      case TagType.Int:
-        this.buffer.writeInt((tag as Tag<TagType.Int, Int>).value.value);
+      case NBTTagType.Int:
+        this.buffer.writeInt((tag as NBTTag<NBTTagType.Int, Int>).value.value);
         break;
-      case TagType.Float:
-        this.buffer.writeFloat((tag as Tag<TagType.Float, Float>).value.value);
+      case NBTTagType.Float:
+        this.buffer.writeFloat((tag as NBTTag<NBTTagType.Float, Float>).value.value);
         break;
-      case TagType.Double:
-        this.buffer.writeDouble((tag as Tag<TagType.Double, Double>).value.value);
+      case NBTTagType.Double:
+        this.buffer.writeDouble((tag as NBTTag<NBTTagType.Double, Double>).value.value);
         break;
-      case TagType.Long:
-        this.buffer.writeLong((tag as Tag<TagType.Long, bigint>).value);
+      case NBTTagType.Long:
+        this.buffer.writeLong((tag as NBTTag<NBTTagType.Long, bigint>).value);
         break;
-      case TagType.ByteArray:
-        this.buffer.writeInt((tag as Tag<TagType.ByteArray, Uint8Array>).value.length);
-        this.buffer.writeBytes((tag as Tag<TagType.ByteArray, Uint8Array>).value);
+      case NBTTagType.ByteArray:
+        this.buffer.writeInt((tag as NBTTag<NBTTagType.ByteArray, Uint8Array>).value.length);
+        this.buffer.writeBytes((tag as NBTTag<NBTTagType.ByteArray, Uint8Array>).value);
         break;
-      case TagType.String:
-        this.buffer.writeShort((tag as Tag<TagType.String, string>).value.length);
-        this.buffer.writeBytes(Buffer.from((tag as Tag<TagType.String, string>).value, "utf8"));
+      case NBTTagType.String:
+        this.buffer.writeShort((tag as NBTTag<NBTTagType.String, string>).value.length);
+        this.buffer.writeBytes(Buffer.from((tag as NBTTag<NBTTagType.String, string>).value, "utf8"));
         break;
-      case TagType.List:
-        this.buffer.writeByte(getType((tag as Tag<TagType.List, EncodableArray>).value[0]));
-        this.buffer.writeInt((tag as Tag<TagType.List, EncodableArray>).value.length);
-        for (const item of (tag as Tag<TagType.List, EncodableArray>).value) {
+      case NBTTagType.List:
+        this.buffer.writeByte(getType((tag as NBTTag<NBTTagType.List, EncodableArray>).value[0]));
+        this.buffer.writeInt((tag as NBTTag<NBTTagType.List, EncodableArray>).value.length);
+        for (const item of (tag as NBTTag<NBTTagType.List, EncodableArray>).value) {
           // Check that all items are the same type
-          if (getType(item) !== getType((tag as Tag<TagType.List, EncodableArray>).value[0])) {
+          if (getType(item) !== getType((tag as NBTTag<NBTTagType.List, EncodableArray>).value[0])) {
             throw new Error("All items in a list must be the same type");
           }
           this.encode(item, { name: false, type: false });
         }
         break;
-      case TagType.Compound:
-        for (const [key, value] of Object.entries((tag as Tag<TagType.Compound, Record<string, Encodable>>).value)) {
-          if (getType(value) === TagType.End) {
+      case NBTTagType.Compound:
+        for (const [key, value] of Object.entries((tag as NBTTag<NBTTagType.Compound, Record<string, Encodable>>).value)) {
+          if (getType(value) === NBTTagType.End) {
             throw new Error("Compound value cannot be empty");
           }
           this.encode(value, { name: key, type: true });
         }
-        this.buffer.writeByte(TagType.End);
+        this.buffer.writeByte(NBTTagType.End);
         break;
-      case TagType.IntArray:
-        this.buffer.writeInt((tag as Tag<TagType.IntArray, Int32Array>).value.length);
-        this.buffer.reserve((tag as Tag<TagType.IntArray, Int32Array>).value.length * 4);
-        for (const value of (tag as Tag<TagType.IntArray, Int32Array>).value) {
+      case NBTTagType.IntArray:
+        this.buffer.writeInt((tag as NBTTag<NBTTagType.IntArray, Int32Array>).value.length);
+        this.buffer.reserve((tag as NBTTag<NBTTagType.IntArray, Int32Array>).value.length * 4);
+        for (const value of (tag as NBTTag<NBTTagType.IntArray, Int32Array>).value) {
           this.buffer.writeInt(value);
         }
         break;
-      case TagType.LongArray:
-        this.buffer.writeInt((tag as Tag<TagType.LongArray, BigInt64Array>).value.length);
-        this.buffer.reserve((tag as Tag<TagType.LongArray, BigInt64Array>).value.length * 8);
-        for (const value of (tag as Tag<TagType.LongArray, BigInt64Array>).value) {
+      case NBTTagType.LongArray:
+        this.buffer.writeInt((tag as NBTTag<NBTTagType.LongArray, BigInt64Array>).value.length);
+        this.buffer.reserve((tag as NBTTag<NBTTagType.LongArray, BigInt64Array>).value.length * 8);
+        for (const value of (tag as NBTTag<NBTTagType.LongArray, BigInt64Array>).value) {
           this.buffer.writeLong(value);
         }
         break;
@@ -332,9 +332,9 @@ export class Encoder {
   }
 }
 
-interface DecodeOptions {
+export interface DecodeOptions {
   name?: boolean;
-  type?: TagType;
+  type?: NBTTagType;
 }
 
 export class Decoder {
@@ -353,10 +353,10 @@ export class Decoder {
     return this.decodeTag(options).value;
   }
 
-  protected decodeTag(options: DecodeOptions = {}): Tag {
+  protected decodeTag(options: DecodeOptions = {}): NBTTag {
     const type = options.type ?? this.buffer.readByte();
-    if (type === TagType.End) {
-      return tag(TagType.End, undefined);
+    if (type === NBTTagType.End) {
+      return tag(NBTTagType.End, undefined);
     }
     let name: string | undefined;
     if (options.name ?? true) {
@@ -366,37 +366,37 @@ export class Decoder {
     switch (type) {
       // case TagType.End:
       //   return tag(TagType.End, undefined, name);
-      case TagType.Byte:
-        return tag(TagType.Byte, byte(this.buffer.readByte()), name);
-      case TagType.Short:
-        return tag(TagType.Short, short(this.buffer.readShort()), name);
-      case TagType.Int:
-        return tag(TagType.Int, int(this.buffer.readInt()), name);
-      case TagType.Float:
-        return tag(TagType.Float, float(this.buffer.readFloat()), name);
-      case TagType.Double:
-        return tag(TagType.Double, double(this.buffer.readDouble()), name);
-      case TagType.Long:
-        return tag(TagType.Long, this.buffer.readLong(), name);
-      case TagType.ByteArray:
-        return tag(TagType.ByteArray, this.buffer.readBytes(this.buffer.readInt()), name);
-      case TagType.String:
-        return tag(TagType.String, this.buffer.readBytes(this.buffer.readShort()).toString("utf8"), name);
-      case TagType.List: {
+      case NBTTagType.Byte:
+        return tag(NBTTagType.Byte, byte(this.buffer.readByte()), name);
+      case NBTTagType.Short:
+        return tag(NBTTagType.Short, short(this.buffer.readShort()), name);
+      case NBTTagType.Int:
+        return tag(NBTTagType.Int, int(this.buffer.readInt()), name);
+      case NBTTagType.Float:
+        return tag(NBTTagType.Float, float(this.buffer.readFloat()), name);
+      case NBTTagType.Double:
+        return tag(NBTTagType.Double, double(this.buffer.readDouble()), name);
+      case NBTTagType.Long:
+        return tag(NBTTagType.Long, this.buffer.readLong(), name);
+      case NBTTagType.ByteArray:
+        return tag(NBTTagType.ByteArray, this.buffer.readBytes(this.buffer.readInt()), name);
+      case NBTTagType.String:
+        return tag(NBTTagType.String, this.buffer.readBytes(this.buffer.readShort()).toString("utf8"), name);
+      case NBTTagType.List: {
         const listType = this.buffer.readByte();
         const listLength = this.buffer.readInt();
         const list: Encodable[] = [];
         for (let i = 0; i < listLength; i++) {
           list.push(this.decode({ name: false, type: listType }));
         }
-        return tag(TagType.List, list as EncodableArray, name);
+        return tag(NBTTagType.List, list as EncodableArray, name);
       }
-      case TagType.Compound: {
+      case NBTTagType.Compound: {
         const compound: Record<string, Encodable> = {};
         // eslint-disable-next-line no-constant-condition
         while (true) {
           const tag = this.decodeTag({ name: true });
-          if (tag.type === TagType.End) {
+          if (tag.type === NBTTagType.End) {
             break;
           }
           if (typeof tag.name === "undefined") {
@@ -404,23 +404,23 @@ export class Decoder {
           }
           compound[tag.name] = tag.value;
         }
-        return tag(TagType.Compound, compound, name);
+        return tag(NBTTagType.Compound, compound, name);
       }
-      case TagType.IntArray: {
+      case NBTTagType.IntArray: {
         const intArrayLength = this.buffer.readInt();
         const intArray: Int32Array = new Int32Array(intArrayLength);
         for (let i = 0; i < intArrayLength; i++) {
           intArray[i] = this.buffer.readInt();
         }
-        return tag(TagType.IntArray, intArray, name);
+        return tag(NBTTagType.IntArray, intArray, name);
       }
-      case TagType.LongArray: {
+      case NBTTagType.LongArray: {
         const longArrayLength = this.buffer.readInt();
         const longArray: BigInt64Array = new BigInt64Array(longArrayLength);
         for (let i = 0; i < longArrayLength; i++) {
           longArray[i] = this.buffer.readLong();
         }
-        return tag(TagType.LongArray, longArray, name);
+        return tag(NBTTagType.LongArray, longArray, name);
       }
       default:
         throw new Error("Unsupported tag type");

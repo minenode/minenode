@@ -18,9 +18,9 @@ import { MessageHandler } from "../../../../../net/protocol/Message";
 import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
 import MineBuffer from "../../../../../utils/MineBuffer";
-import Connection from "../../../../../server/Connection";
 import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
+import { Player } from "../../../../../server/Player";
 
 export class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -32,18 +32,21 @@ export class LoginStartMessage extends MessageHandler {
     });
   }
 
-  public handle(buffer: MineBuffer, player: Connection): void {
+  public handle(buffer: MineBuffer, player: Player): void {
     const username = buffer.readString();
     // TODO: validate username w/ regex
-    player.username = username;
 
-    this.server.logger.info(`${player.remote}: Login start for username '${username}'`);
+    player["_initialize"]({
+      username,
+    });
 
-    if (!player.clientProtocol) {
+    this.server.logger.info(`${player.connection.remote}: Login start for username '${username}'`);
+
+    if (!player.connection.clientProtocol) {
       return player.disconnect("Your client did not provide a protocol version.");
-    } else if (player.clientProtocol < PROTOCOL_VERSION) {
+    } else if (player.connection.clientProtocol < PROTOCOL_VERSION) {
       return player.disconnect(`Your client is outdated! Server is on version ${GAME_VERSION}.`);
-    } else if (player.clientProtocol > PROTOCOL_VERSION) {
+    } else if (player.connection.clientProtocol > PROTOCOL_VERSION) {
       return player.disconnect(`Your client is too new! Server is on version ${GAME_VERSION}.`);
     }
 
@@ -53,9 +56,9 @@ export class LoginStartMessage extends MessageHandler {
         format: "der",
         type: "spki",
       }),
-      verifyToken: player.encryption.verifyToken,
+      verifyToken: player.connection.encryption.verifyToken,
     });
 
-    player.writeMessage(response);
+    player.sendPacket(response);
   }
 }

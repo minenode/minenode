@@ -26,6 +26,7 @@ import CompressionState from "./CompressionState";
 import { Chat, consoleFormatChat } from "../utils/Chat";
 import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
 import Server from "./Server";
+import { PlayClientboundDisconnectMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundDisconnectMessage";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
 
@@ -72,7 +73,7 @@ export default class Connection extends EventEmitter<{
   public writeMessage(message: IClientboundMessage): void {
     const buffer = new MineBuffer();
     message.encode(buffer);
-    this.server.logger.debug(`${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
+    // this.server.logger.debug(`${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
     this.write(message.id, buffer);
   }
 
@@ -119,8 +120,9 @@ export default class Connection extends EventEmitter<{
       this.writeMessage(msg);
       this.socket.end(); // async
     } else if (this.state === ConnectionState.PLAY) {
-      // TODO
-      this.hardDisconnect();
+      const msg = new PlayClientboundDisconnectMessage({ reason });
+      this.writeMessage(msg);
+      this.socket.end(); // async
     }
   }
 

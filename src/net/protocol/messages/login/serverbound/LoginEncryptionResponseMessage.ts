@@ -20,15 +20,17 @@ import { MessageHandler } from "../../../../../net/protocol/Message";
 import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
 import MineBuffer from "../../../../../utils/MineBuffer";
-import Connection from "../../../../../server/Connection";
 import LoginSetCompressionMessage from "../clientbound/LoginSetCompressionMessage";
 import LoginSuccessMessage from "../clientbound/LoginSuccessMessage";
-import * as uuid from "uuid";
 import { PlayClientboundPositionAndLookMessage } from "../../play/clientbound/PlayClientboundPositionAndLookMessage";
-import PositionYP from "../../../../../utils/geometry/PositionYP";
 import { PlayClientboundJoinGameMessage } from "../../play/clientbound/PlayClientboundJoinGameMessage";
-import { GameMode } from "../../../../../utils/DataTypes";
+import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChannel } from "../../../../../utils/Enums";
 import { float, int, byte, double } from "../../../../../data/NBT";
+import { PlayClientboundPluginMessage } from "../../play/clientbound/PlayClientboundPluginMessage";
+import { PlayClientboundServerDifficultyMessage } from "../../play/clientbound/PlayClientboundServerDifficultyMessage";
+import { Vec5 } from "../../../../../utils/Geometry";
+import { Player } from "../../../../../server/Player";
+import { PlayClientboundEntityStatusMessage } from "../../play/clientbound/PlayClientboundEntityStatusMessage";
 
 export class LoginEncryptionResponseMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -40,7 +42,7 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
     });
   }
 
-  public async handle(buffer: MineBuffer, player: Connection): Promise<void> {
+  public async handle(buffer: MineBuffer, player: Player): Promise<void> {
     const sharedSecretLength = buffer.readVarInt();
     const sharedSecret = buffer.readBytes(sharedSecretLength);
     const verifyTokenLengh = buffer.readVarInt();
@@ -51,31 +53,28 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
     const decryptedSharedSecret = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, sharedSecret);
     const decryptedVerifyToken = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, verifyToken);
 
-    if (!decryptedVerifyToken.equals(player.encryption.verifyToken)) {
+    if (!decryptedVerifyToken.equals(player.connection.encryption.verifyToken)) {
       // Invalid
-      this.server.logger.error(`${player.remote}: Verify token mismatch`);
+      this.server.logger.error(`${player.connection.remote}: Verify token mismatch`);
       return player.disconnect("Verify token mismatch");
     }
 
-    player.encryption.initialize(decryptedSharedSecret);
-    player.encryption.enabled = true;
+    player.connection.encryption.initialize(decryptedSharedSecret);
+    player.connection.encryption.enabled = true;
 
-    const compressionResponse = new LoginSetCompressionMessage(this.server.options.compressionThreshold);
-    player.writeMessage(compressionResponse);
-    player.compression.enabled = true;
+    player.sendPacket(new LoginSetCompressionMessage(this.server.options.compressionThreshold));
+    player.connection.compression.enabled = true;
 
     // TODO: auth
 
-    // return player.disconnect(
-    //   `${ChatColor.AQUA}${ChatColor.BOLD}Welcome to MineNode, ${player.username}\n\n${ChatColor.RESET}` +
-    //     `${ChatColor.GREEN}Encryption & zlib Compression OK!\n${ChatColor.RESET}` +
-    //     `${ChatColor.WHITE}Using AES-128-CFB8 symmetric cipher`,
-    // );
+    player.sendPacket(
+      new LoginSuccessMessage({
+        uuid: player.uuid,
+        username: player.username,
+      }),
+    );
 
-    const successResponse = new LoginSuccessMessage(uuid.v1(), player.username ?? "");
-    player.writeMessage(successResponse);
-
-    player.state = ConnectionState.PLAY;
+    player.connection.state = ConnectionState.PLAY;
 
     const joinGameResponse = new PlayClientboundJoinGameMessage({
       entityId: 1,
@@ -167,22 +166,62 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
       isDebug: false,
       isFlat: false,
     });
-    player.writeMessage(joinGameResponse);
+    player.sendPacket(joinGameResponse);
 
     await this.server.nextTick();
 
-    const posResponse = new PlayClientboundPositionAndLookMessage({
-      position: new PositionYP(0, 1, 0, 0, 0),
-      flags: {
-        x: false,
-        y: false,
-        z: false,
-        y_rot: false,
-        x_rot: false,
-      },
-      teleportId: 69,
-      dismountVehicle: false,
-    });
-    player.writeMessage(posResponse);
+    player.sendPacket(
+      new PlayClientboundServerDifficultyMessage({
+        difficulty: Difficulty.NORMAL,
+        difficultyLocked: false,
+      }),
+    );
+
+    player.sendPacket(
+      new PlayClientboundPluginMessage({
+        channel: PluginChannel.MINECRAFT_BRAND,
+        data: new MineBuffer().writeString("MineNode"),
+      }),
+    );
+
+    player.setHotbarSlot(InventoryHotbarSlot.SLOT_1);
+
+    // TODO: Declare recipes
+    // TODO: Tags
+
+    player.sendPacket(
+      new PlayClientboundEntityStatusMessage({
+        entityId: player.id,
+        status: AllEntityStatus.PLAYER__SET_OP_PERMISSION_4, // TODO: read from config, validate, etc.
+      }),
+    );
+
+    // TODO: Declare commands
+    // TODO: Unlock recipes
+
+    player.sendPacket(
+      new PlayClientboundPositionAndLookMessage({
+        position: new Vec5(0, 1, 0, 0, 0),
+        flags: {
+          x: false,
+          y: false,
+          z: false,
+          y_rot: false,
+          x_rot: false,
+        },
+        teleportId: 69,
+        dismountVehicle: false,
+      }),
+    );
+
+    // TODO: Player info (Add Player action)
+    // TODO: Player info (Update latency action)
+    // TODO: Update View Position
+    // TODO: Update Light
+    // TODO: Chunk Data
+    // TODO: World Border
+    // TODO: Spawn Position
+
+    // TODO: Move this all out of this class
   }
 }
