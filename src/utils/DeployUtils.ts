@@ -18,40 +18,15 @@ import fs from "fs";
 import path from "path";
 
 /**
- * Checks if the current process is running from a pkg executable.
- * @returns If the current process is running from a pkg executable
- */
-export function isRunningFromPkg(): boolean {
-  return "pkg" in process;
-}
-
-/**
  * Returns the application's root directory.
- * @returns The application's root directory
  */
 export function getRootDirectory(): string {
-  if (isRunningFromPkg()) {
-    return path.dirname(process.argv[0]);
-  } else {
-    let dirname = __dirname;
-    while (!fs.existsSync(path.join(dirname, "package.json"))) {
-      if (dirname === path.dirname(dirname)) {
-        throw new Error("Could not find root directory");
-      }
-      dirname = path.dirname(dirname);
+  let dirname = __dirname;
+  while (!fs.existsSync(path.join(dirname, "package.json"))) {
+    if (dirname === path.dirname(dirname)) {
+      throw new Error("Could not find root directory");
     }
-    return dirname;
+    dirname = path.dirname(dirname);
   }
-}
-
-/**
- * Returns the path to the Wasm directory.
- * Note that this function will return a snapshot path if the application is running from a pkg executable.
- */
-export function getWasmDirectory(): string {
-  if (isRunningFromPkg()) {
-    return path.join(__dirname, "..", "..", "wasm");
-  } else {
-    return path.join(getRootDirectory(), "wasm");
-  }
+  return dirname;
 }
