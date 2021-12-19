@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import Server from "../../../../../server/Server";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import StatusPongMessage from "../clientbound/StatusPongMessage";

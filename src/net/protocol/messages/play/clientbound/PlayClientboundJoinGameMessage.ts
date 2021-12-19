@@ -15,9 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { GameMode } from "../../../../../utils/Enums";
-import { Encodable } from "../../../../../data/NBT";
+import { Encodable, encodeNBT } from "../../../../../data/NBT";
 
 export interface PlayClientboundJoinGameMessageOptions {
   entityId: number;
@@ -78,28 +78,28 @@ export class PlayClientboundJoinGameMessage implements IClientboundMessage {
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer
-      .writeInt(this.entityId)
-      .writeBoolean(this.isHardcore)
-      .writeUByte(this.gamemode)
-      .writeByte(this.previousGameMode) //
-      .writeVarInt(this.worlds.length);
+    buffer.writeInt(this.entityId);
+    buffer.writeBoolean(this.isHardcore);
+    buffer.writeUByte(this.gamemode);
+    buffer.writeByte(this.previousGameMode);
+    buffer.writeVarInt(this.worlds.length);
 
     for (const world of this.worlds) {
       buffer.writeString(world);
     }
 
-    buffer
-      .writeNBT(this.dimensionCodec, { name: "" })
-      .writeNBT(this.dimension, { name: "" })
-      .writeString(this.worldName)
-      .writeLong(this.hashedSeed)
-      .writeVarInt(this.maxPlayers)
-      .writeVarInt(this.viewDistance)
-      .writeVarInt(this.simulationDistance)
-      .writeBoolean(this.reducedDebugInfo)
-      .writeBoolean(this.enableRespawnScreen)
-      .writeBoolean(this.isDebug)
-      .writeBoolean(this.isFlat);
+    // buffer.writeNBT(this.dimensionCodec, { name: "" });
+    // buffer.writeNBT(this.dimension, { name: "" });
+    encodeNBT(buffer, this.dimensionCodec, { name: "" });
+    encodeNBT(buffer, this.dimension, { name: "" });
+    buffer.writeString(this.worldName);
+    buffer.writeLong(this.hashedSeed);
+    buffer.writeVarInt(this.maxPlayers);
+    buffer.writeVarInt(this.viewDistance);
+    buffer.writeVarInt(this.simulationDistance);
+    buffer.writeBoolean(this.reducedDebugInfo);
+    buffer.writeBoolean(this.enableRespawnScreen);
+    buffer.writeBoolean(this.isDebug);
+    buffer.writeBoolean(this.isFlat);
   }
 }

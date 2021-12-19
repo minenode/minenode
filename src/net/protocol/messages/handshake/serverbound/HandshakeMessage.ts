@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import Server from "../../../../../server/Server";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native";
 import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import { Player } from "../../../../../server/Player";
@@ -30,7 +30,7 @@ export class HandshakeMessageHandler extends MessageHandler {
     });
   }
 
-  public handle(buffer: MineBuffer, player: Player): void {
+  public async handle(buffer: MineBuffer, player: Player): Promise<void> {
     const protocolVersion = buffer.readVarInt();
     const serverAddress = buffer.readString();
     const serverPort = buffer.readUShort();
@@ -43,7 +43,8 @@ export class HandshakeMessageHandler extends MessageHandler {
     }
 
     player.connection.clientProtocol = protocolVersion;
-    player.connection.state = nextState;
+
+    await player.setState(nextState);
 
     const serverIP = `${serverAddress}:${serverPort}`;
 

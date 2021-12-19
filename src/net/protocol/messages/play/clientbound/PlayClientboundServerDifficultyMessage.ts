@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { IClientboundMessage } from "../../../Message";
 import { Difficulty } from "../../../../../utils/Enums";
 
@@ -35,6 +35,7 @@ export class PlayClientboundServerDifficultyMessage implements IClientboundMessa
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeUByte(this.difficulty).writeBoolean(this.difficultyLocked);
+    buffer.writeUByte(this.difficulty);
+    buffer.writeBoolean(this.difficultyLocked);
   }
 }

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 
 export default class StatusPongMessage implements IClientboundMessage {
   public id = 0x01;

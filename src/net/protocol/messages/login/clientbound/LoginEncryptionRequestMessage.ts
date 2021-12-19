@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 
 export default class LoginEncryptionRequestMessage implements IClientboundMessage {
   public id = 0x01;
@@ -31,11 +31,10 @@ export default class LoginEncryptionRequestMessage implements IClientboundMessag
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer
-      .writeString(this.serverID)
-      .writeVarInt(this.publicKey.length)
-      .writeBytes(this.publicKey)
-      .writeVarInt(this.verifyToken.length)
-      .writeBytes(this.verifyToken);
+    buffer.writeString(this.serverID);
+    buffer.writeVarInt(this.publicKey.length);
+    buffer.writeBytes(this.publicKey);
+    buffer.writeVarInt(this.verifyToken.length);
+    buffer.writeBytes(this.verifyToken);
   }
 }

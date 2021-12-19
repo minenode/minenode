@@ -1,5 +1,5 @@
 import { InventoryHotbarSlot } from "../../../../../utils/Enums";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundHeldItemChangeMessageOptions {

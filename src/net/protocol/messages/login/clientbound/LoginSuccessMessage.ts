@@ -15,8 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
-import MineBuffer from "../../../../../utils/MineBuffer";
-
+import { MineBuffer } from "../../../../../../native/index";
 export interface LoginSuccessMessageOptions {
   uuid: string;
   username: string;
@@ -34,6 +33,7 @@ export default class LoginSuccessMessage implements IClientboundMessage {
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeUUID(this.uuid).writeString(this.username);
+    buffer.writeUUID(this.uuid);
+    buffer.writeString(this.username);
   }
 }

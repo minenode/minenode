@@ -1,7 +1,7 @@
 import { MessageHandler } from "../../../Message";
 import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { PluginChannel } from "../../../../../utils/Enums";
 import { Player } from "../../../../../server/Player";
 
@@ -22,7 +22,7 @@ export class PlayServerboundPluginMessage extends MessageHandler {
     switch (channel) {
       case PluginChannel.MINECRAFT_BRAND: {
         const brand = buffer.readString();
-        this.server.logger.info(`${player.connection.remote}: brand = ${brand}`);
+        void brand; // Unneeded
         break;
       }
       default:

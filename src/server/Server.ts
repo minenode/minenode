@@ -28,12 +28,14 @@ import { Logger, LogLevel } from "../utils/Logger";
 import { StdoutConsumer, FileConsumer } from "../utils/Logger";
 import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
 import { Player } from "./Player";
+import { Performance } from "../utils/Performance";
+import { destroy } from "../core/Base";
 
 export interface ServerOptions {
   compressionThreshold: number;
   motd: string;
   maxPlayers: number;
-  favicon?: string;
+  favicon: string;
 }
 
 export default class Server extends EventEmitter<{
@@ -52,6 +54,10 @@ export default class Server extends EventEmitter<{
   public ticker: NodeJS.Timer | null = null;
   private running = false;
 
+  public readonly performance = new Performance(100);
+
+  public brand = "MineNode";
+
   protected _nextEntityId = 1;
 
   public readonly logger = new Logger("Server")
@@ -65,11 +71,6 @@ export default class Server extends EventEmitter<{
     this.tcpServer.on("connection", this._onSocketConnect.bind(this));
 
     this.handlerFactory = new MessageHandlerFactory(this);
-
-    // Display license message
-    this.logger.info(`MineNode ${MINENODE_VERSION} - implementing MC ${GAME_VERSION} (${PROTOCOL_VERSION})`);
-    this.logger.info(`Copyright (C) ${new Date().getFullYear()} MineNode. All rights reserved.`);
-    this.logger.info("AGPLv3 Licence - https://www.gnu.org/licenses/agpl-3.0.html");
   }
 
   protected generateKeyPair(): void {
@@ -100,21 +101,33 @@ export default class Server extends EventEmitter<{
   }
 
   public start(): void {
+    // Display license message
+    this.logger.info(`MineNode ${MINENODE_VERSION} - implementing MC ${GAME_VERSION} (${PROTOCOL_VERSION})`);
+    this.logger.info(`Copyright (C) ${new Date().getFullYear()} MineNode. All rights reserved.`);
+    this.logger.info("AGPLv3 Licence - https://www.gnu.org/licenses/agpl-3.0.html");
+
     this.loadServerIcon();
     this.generateKeyPair();
-    // TODO: config in constructor
+
+    // TODO: load from config
     this.tcpServer.listen(25565, "0.0.0.0");
+
     // Start tick
     this.running = true;
     this.ticker = setInterval(this._tick.bind(this), 1000 / 20);
-    this.logger.info(`server listening`);
+    this.logger.info("server listening");
   }
 
   protected _tick(): void {
+    this.performance.tick();
     this.tickCount++;
     this.emit("tick", this.tickCount);
     for (const player of this.players) {
       player["_tick"](this.tickCount);
+    }
+
+    if (this.tickCount % (20 * 50) === 0) {
+      this.logger.debug(`tick ${this.tickCount}, TPS = ${((this.performance.average / 1_000_000) * (20 / 50)).toFixed(1)}`);
     }
   }
 
@@ -134,7 +147,7 @@ export default class Server extends EventEmitter<{
     connection.encryption.setKeypair(this.keypair);
     connection.compression.setThreshold(this.options.compressionThreshold);
 
-    this.logger.info(`${connection.remote}: connected`);
+    this.logger.debug(`${connection.remote}: connected`);
 
     const player = new Player(this, connection);
     this.players.add(player);
@@ -142,13 +155,12 @@ export default class Server extends EventEmitter<{
     // Bind connection events
     // TODO: move this to Player class?
     connection.on("disconnect", () => {
-      this.logger.info(`${connection.remote}: disconnected`);
+      this.logger.debug(`${connection.remote}: disconnected`);
       this.players.delete(player);
+      destroy(player);
     });
 
     connection.on("message", msg => {
-      // this.logger.debug(`${connection.remote}: message 0x${msg.packetID.toString(16)} (len = ${msg.payload.remaining}) recv`);
-
       const handler = this.handlerFactory.getHandler(msg.packetID, connection.state);
 
       if (handler) {
@@ -158,7 +170,6 @@ export default class Server extends EventEmitter<{
           this.logger.error(util.inspect(err));
           connection.disconnect({ text: String(err), color: "red" });
         }
-        // this.logger.debug(`${connection.remote}: message '${handler.label}' handled`);
       } else {
         // TODO handle
         this.logger.error(

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { Assert } from "../utils/Logic";
-import MineBuffer from "../utils/MineBuffer";
+import { MineBuffer } from "../../native";
 import * as zlib from "zlib";
 
 export enum NBTTagType {
@@ -107,6 +107,7 @@ export function double(value: number): Double {
 export type Encodable =
   | undefined
   | Byte
+  | boolean
   | Short
   | Int
   | bigint
@@ -122,6 +123,7 @@ export type Encodable =
 export type EncodableArray =
   | undefined[]
   | Byte[]
+  | boolean[]
   | Short[]
   | Int[]
   | bigint[]
@@ -159,7 +161,7 @@ function isArrayOf<T>(array: unknown, ctor: Constructor<T> | string | ((item: un
 
 export function isEncodable(value: unknown): value is Encodable {
   const encodableTypes = [Byte, Short, Int, Float, Double, Uint8Array, Int32Array, BigInt64Array];
-  if (typeof value === "undefined" || typeof value === "string" || typeof value === "bigint") {
+  if (typeof value === "undefined" || typeof value === "string" || typeof value === "bigint" || typeof value === "boolean") {
     return true;
   }
   if (encodableTypes.some(ctor => value instanceof ctor)) {
@@ -179,7 +181,7 @@ export function getType<T extends Encodable>(value: T): NBTTagType {
     throw new Error("Value is not encodable");
   } else if (value === undefined) {
     return NBTTagType.End;
-  } else if (value instanceof Byte) {
+  } else if (typeof value === "boolean" || value instanceof Byte) {
     return NBTTagType.Byte;
   } else if (value instanceof Short) {
     return NBTTagType.Short;
@@ -246,7 +248,8 @@ export class Encoder {
     this.encodeTag(value instanceof NBTTag ? value : tag(getType(value), value), options);
     if (options.gzip) {
       const zipped = zlib.gzipSync(this.buffer.getBuffer());
-      this.buffer.reset().writeBytes(zipped);
+      this.buffer.reset();
+      this.buffer.writeBytes(zipped);
     }
     return this;
   }
@@ -265,9 +268,11 @@ export class Encoder {
     switch (tag.type) {
       case NBTTagType.End:
         break;
-      case NBTTagType.Byte:
-        this.buffer.writeByte((tag as NBTTag<NBTTagType.Byte, Byte>).value.value);
+      case NBTTagType.Byte: {
+        const value = (tag as NBTTag<NBTTagType.Byte, Byte | boolean>).value;
+        this.buffer.writeByte(value instanceof Byte ? value.value : value ? 1 : 0);
         break;
+      }
       case NBTTagType.Short:
         this.buffer.writeShort((tag as NBTTag<NBTTagType.Short, Short>).value.value);
         break;
@@ -285,7 +290,7 @@ export class Encoder {
         break;
       case NBTTagType.ByteArray:
         this.buffer.writeInt((tag as NBTTag<NBTTagType.ByteArray, Uint8Array>).value.length);
-        this.buffer.writeBytes((tag as NBTTag<NBTTagType.ByteArray, Uint8Array>).value);
+        this.buffer.writeBytes(Buffer.from((tag as NBTTag<NBTTagType.ByteArray, Uint8Array>).value));
         break;
       case NBTTagType.String:
         this.buffer.writeShort((tag as NBTTag<NBTTagType.String, string>).value.length);
@@ -345,7 +350,8 @@ export class Decoder {
     this.buffer = buffer instanceof MineBuffer ? buffer : new MineBuffer(buffer);
     if (gzip) {
       const unzipped = zlib.gunzipSync(this.buffer.getBuffer());
-      this.buffer.reset().writeBytes(unzipped);
+      this.buffer.reset();
+      this.buffer.writeBytes(unzipped);
     }
   }
 
@@ -426,4 +432,12 @@ export class Decoder {
         throw new Error("Unsupported tag type");
     }
   }
+}
+
+export function decodeNBT(buffer: MineBuffer, options: DecodeOptions = {}, gzip = false): Encodable {
+  return new Decoder(buffer, gzip).decode(options);
+}
+
+export function encodeNBT(buffer: MineBuffer, value: Encodable, options: EncodeOptions = {}): void {
+  new Encoder(buffer).encode(value, options);
 }

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { PluginChannel } from "../../../../../utils/Enums";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundPluginMessageOptions {
@@ -35,6 +35,7 @@ export class PlayClientboundPluginMessage implements IClientboundMessage {
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeString(this.channel).writeBytes(this.data.getBuffer());
+    buffer.writeString(this.channel);
+    buffer.writeBytes(this.data.getBuffer());
   }
 }

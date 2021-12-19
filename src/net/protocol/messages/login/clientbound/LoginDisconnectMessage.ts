@@ -16,7 +16,7 @@
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
 import { Chat } from "../../../../../utils/Chat";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native";
 
 export default class LoginDisconnectMessage implements IClientboundMessage {
   public id = 0x00;
@@ -24,6 +24,6 @@ export default class LoginDisconnectMessage implements IClientboundMessage {
   public constructor(public reason: Chat) {}
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeChat(this.reason);
+    buffer.writeString(JSON.stringify(this.reason));
   }
 }

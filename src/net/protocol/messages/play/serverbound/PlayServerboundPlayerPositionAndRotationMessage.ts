@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import Server from "../../../../../server/Server";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import { Vec5 } from "../../../../../utils/Geometry";
@@ -44,8 +44,8 @@ export class PlayServerboundPlayerPositionAndRotationMessage extends MessageHand
     const distance = newPos.distance(player.position);
     if (distance > 10) {
       // TODO: anti-cheat etc.
-      player.disconnect(`Player moved too far (distance = ${distance})`);
-      return;
+      // player.disconnect(`Player moved too far (distance = ${distance})`);
+      // return;
     }
 
     if (onGround) {
@@ -58,8 +58,8 @@ export class PlayServerboundPlayerPositionAndRotationMessage extends MessageHand
       // TODO: anti-cheat etc.
       const timeFloating = this.server.tickCount - player.lastTickOnGround;
       if (timeFloating > 20 * 10) {
-        player.disconnect("Flying is not enabled on this server.");
-        return;
+        // player.disconnect("Flying is not enabled on this server.");
+        // return;
       }
     } else {
       player.onGround = false;

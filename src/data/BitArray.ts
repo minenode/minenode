@@ -1,0 +1,142 @@
+import { MineBuffer } from "../../native";
+// Adapted from:
+// https://github.dev/PrismarineJS/prismarine-chunk/blob/3e617d8e39ed9863c46fe99c296eef82fc9eabaa/src/pc/common/BitArray.js
+// License: MIT
+
+type ReadWriteArrayLike<T> = {
+  [i: number]: T;
+  readonly length: number;
+};
+
+export interface BitArrayOptions {
+  data?: Uint32Array;
+  capacity: number;
+  bitsPerValue: number;
+}
+
+export class BitArray {
+  protected data: ReadWriteArrayLike<number>;
+  protected valueMask: number;
+  protected capacity: number;
+  protected bitsPerValue: number;
+
+  public constructor(options: BitArrayOptions) {
+    const data = options.data ?? new Uint32Array(Math.ceil((options.capacity * options.bitsPerValue) / 32));
+    const valueMask = (1 << options.bitsPerValue) - 1;
+
+    this.data = data.buffer ? new Uint32Array(data.buffer) : Uint32Array.from(data);
+    this.capacity = options.capacity;
+    this.bitsPerValue = options.bitsPerValue;
+    this.valueMask = valueMask;
+  }
+
+  public get(index: number): number {
+    const bitIndex = index * this.bitsPerValue;
+    const startLongIndex = bitIndex >>> 5;
+    const startLong = this.data[startLongIndex];
+    const indexInStartLong = bitIndex & 31;
+    let result = startLong >>> indexInStartLong;
+    const endBitOffset = indexInStartLong + this.bitsPerValue;
+    if (endBitOffset > 32) {
+      const endLong = this.data[startLongIndex + 1];
+      result |= endLong << (32 - indexInStartLong);
+    }
+    return result & this.valueMask;
+  }
+
+  public set(index: number, value: number): void {
+    const bitIndex = index * this.bitsPerValue;
+    const startLongIndex = bitIndex >>> 5;
+    const indexInStartLong = bitIndex & 31;
+
+    this.data[startLongIndex] = ((this.data[startLongIndex] & ~(this.valueMask << indexInStartLong)) | ((value & this.valueMask) << indexInStartLong)) >>> 0;
+    const endBitOffset = indexInStartLong + this.bitsPerValue;
+    if (endBitOffset > 32) {
+      this.data[startLongIndex + 1] = ((this.data[startLongIndex + 1] & ~((1 << (endBitOffset - 32)) - 1)) | (value >> (32 - indexInStartLong))) >>> 0;
+    }
+  }
+
+  public resizeTo(newBitsPerValue: number): BitArray {
+    const newArray = new BitArray({
+      capacity: this.capacity,
+      bitsPerValue: newBitsPerValue,
+    });
+    for (let i = 0; i < this.capacity; i++) {
+      const value = this.get(i);
+      if (Math.clz32(value) > newBitsPerValue) {
+        throw new RangeError(`Value ${value} is too large for ${newBitsPerValue} bits`);
+      }
+      newArray.set(i, value);
+    }
+    return newArray;
+  }
+
+  public size(): number {
+    return this.data.length / 2;
+  }
+
+  public readBuffer(buffer: MineBuffer): this {
+    for (let i = 0; i < this.data.length; i += 2) {
+      this.data[i + 1] = buffer.readUInt();
+      this.data[i] = buffer.readUInt();
+    }
+    return this;
+  }
+
+  public writeBuffer(buffer: MineBuffer): this {
+    for (let i = 0; i < this.data.length; i += 2) {
+      buffer.writeUInt(this.data[i + 1]);
+      buffer.writeUInt(this.data[i]);
+    }
+    return this;
+  }
+
+  public getBitsPerValue(): number {
+    return this.bitsPerValue;
+  }
+
+  public toString(): string {
+    return `BitArray(capacity=${this.capacity}, bitsPerValue=${this.bitsPerValue}, data=${this.data.toString()})`;
+  }
+
+  public toJSON(): BitArrayOptions {
+    return {
+      capacity: this.capacity,
+      bitsPerValue: this.bitsPerValue,
+      data: new Uint32Array(this.data),
+    };
+  }
+
+  public static from(json: BitArrayOptions): BitArray {
+    return new BitArray({
+      capacity: json.capacity,
+      bitsPerValue: json.bitsPerValue,
+      data: json.data,
+    });
+  }
+
+  public static fromArray(array: ReadWriteArrayLike<number>, bitsPerValue: number): BitArray {
+    const data = [];
+    let i = 0,
+      curLong = 0,
+      curBit = 0;
+    while (i < array.length) {
+      curLong |= array[i] << curBit;
+      curBit += bitsPerValue;
+      if (curBit > 32) {
+        data.push(curLong & 0xffffffff);
+        curBit -= 32;
+        curLong = array[i] >>> (bitsPerValue - curBit);
+      }
+      i++;
+    }
+    if (curBit > 0) {
+      data.push(curLong);
+    }
+    return new BitArray({
+      capacity: array.length,
+      bitsPerValue,
+      data: new Uint32Array(data), // TODO: this is copying the array, may be inefficient
+    });
+  }
+}

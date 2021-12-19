@@ -1,7 +1,7 @@
 import { MessageHandler } from "../../../Message";
 import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { Player } from "../../../../../server/Player";
 
 export class PlayServerboundTeleportConfirmMessage extends MessageHandler {
@@ -17,6 +17,7 @@ export class PlayServerboundTeleportConfirmMessage extends MessageHandler {
   public handle(buffer: MineBuffer, player: Player): void {
     const teleportId = buffer.readVarInt();
 
-    this.server.logger.debug(`${player.connection.remote}: teleport confirm (teleportId = ${teleportId})`);
+    // TODO: handle
+    void teleportId, player;
   }
 }

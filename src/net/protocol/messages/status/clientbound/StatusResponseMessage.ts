@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { Chat } from "../../../../../utils/Chat";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
 
 export interface StatusResponse {

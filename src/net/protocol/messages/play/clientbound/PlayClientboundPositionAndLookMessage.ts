@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { Vec5 } from "../../../../../utils/Geometry";
 
 export interface PlayClientboundPositionAndLookMessageOptions {
@@ -41,16 +41,15 @@ export class PlayClientboundPositionAndLookMessage implements IClientboundMessag
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer
-      .writeDouble(this.position.x)
-      .writeDouble(this.position.y)
-      .writeDouble(this.position.z)
-      .writeFloat(this.position.yaw)
-      .writeFloat(this.position.pitch)
-      .writeUByte(
-        (this.flags.x ? 0x01 : 0) | (this.flags.y ? 0x02 : 0) | (this.flags.z ? 0x04 : 0) | (this.flags.y_rot ? 0x08 : 0) | (this.flags.x_rot ? 0x10 : 0),
-      )
-      .writeVarInt(this.teleportId)
-      .writeBoolean(this.dismountVehicle);
+    buffer.writeDouble(this.position.x);
+    buffer.writeDouble(this.position.y);
+    buffer.writeDouble(this.position.z);
+    buffer.writeFloat(this.position.yaw);
+    buffer.writeFloat(this.position.pitch);
+    buffer.writeUByte(
+      (this.flags.x ? 0x01 : 0) | (this.flags.y ? 0x02 : 0) | (this.flags.z ? 0x04 : 0) | (this.flags.y_rot ? 0x08 : 0) | (this.flags.x_rot ? 0x10 : 0),
+    );
+    buffer.writeVarInt(this.teleportId);
+    buffer.writeBoolean(this.dismountVehicle);
   }
 }

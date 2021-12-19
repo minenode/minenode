@@ -1,7 +1,7 @@
 import { ConnectionState } from "../../../../../server/Connection";
 import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { MessageHandler } from "../../../Message";
 
 export class PlayServerboundKeepAliveMessage extends MessageHandler {

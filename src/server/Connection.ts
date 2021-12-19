@@ -15,11 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import * as net from "net";
-import util from "util";
+import util, { inspect } from "util";
 
-import { EventEmitter } from "eventemitter3";
-
-import MineBuffer from "../utils/MineBuffer";
+import { MineBuffer } from "../../native/index";
 import { IClientboundMessage } from "../net/protocol/Message";
 import EncryptionState from "./EncryptionState";
 import CompressionState from "./CompressionState";
@@ -27,6 +25,7 @@ import { Chat, consoleFormatChat } from "../utils/Chat";
 import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
 import Server from "./Server";
 import { PlayClientboundDisconnectMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundDisconnectMessage";
+import { Base } from "../core/Base";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
 
@@ -40,24 +39,45 @@ export enum ConnectionState {
 /**
  * A wrapper class around an incoming TCP socket. Handles message framing, encryption, etc.
  */
-export default class Connection extends EventEmitter<{
-  message: [{ packetID: number; payload: MineBuffer }];
-  disconnect: [];
-}> {
+export default class Connection extends Base<
+  void,
+  {
+    message: [{ packetID: number; payload: MineBuffer }];
+    disconnect: [];
+    stateChange: [ConnectionState];
+  }
+> {
+  protected _tick(): void {
+    throw new Error("Method not implemented.");
+  }
+
+  protected _initialize(): void {
+    throw new Error("Method not implemented.");
+  }
+
+  #state: ConnectionState = ConnectionState.HANDSHAKE;
+
+  public get state(): ConnectionState {
+    return this.#state;
+  }
+
+  protected set state(state: ConnectionState) {
+    this.#state = state;
+  }
+
   public socket: net.Socket;
   public remote: string;
   public buffer: MineBuffer = new MineBuffer();
-  public state = ConnectionState.HANDSHAKE;
   public clientProtocol?: number;
   public encryption: EncryptionState;
   public compression: CompressionState;
   public username?: string;
-  public server: Server;
+
+  protected timeout: NodeJS.Timeout | null = null;
 
   public constructor(server: Server, socket: net.Socket) {
-    super();
+    super(server);
 
-    this.server = server;
     this.socket = socket;
     this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
 
@@ -66,8 +86,24 @@ export default class Connection extends EventEmitter<{
 
     // Bind events - close, data, error
     this.socket.on("close", this._onClose.bind(this));
-    this.socket.on("data", this._onData.bind(this));
+    this.socket.on("data", this._wrapped_onData.bind(this));
     this.socket.on("error", this._onError.bind(this));
+
+    this.resetTimeout();
+  }
+
+  protected override _destroy(): void {
+    this.socket.destroy();
+    if (this.timeout) clearTimeout(this.timeout);
+  }
+
+  protected resetTimeout(): void {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = setTimeout(() => {
+      this.disconnect("Timed out");
+    }, 30 * 1000); // TODO: config
   }
 
   public writeMessage(message: IClientboundMessage): void {
@@ -84,8 +120,8 @@ export default class Connection extends EventEmitter<{
 
     if (this.compression.enabled && this.compression.threshold > 0) {
       const data = new MineBuffer();
-      if (buffer.remaining >= this.compression.threshold) {
-        data.writeVarInt(buffer.remaining);
+      if (buffer.remaining() >= this.compression.threshold) {
+        data.writeVarInt(buffer.remaining());
         data.writeBytes(this.compression.decompress(buffer.readRemaining()));
       } else {
         data.writeVarInt(0);
@@ -95,7 +131,7 @@ export default class Connection extends EventEmitter<{
     }
 
     const data = new MineBuffer();
-    data.writeVarInt(buffer.remaining);
+    data.writeVarInt(buffer.remaining());
     data.writeBytes(buffer.readRemaining());
 
     let finalBuffer = data.readRemaining();
@@ -131,6 +167,16 @@ export default class Connection extends EventEmitter<{
     // TODO
   }
 
+  protected _wrapped_onData(data: Buffer): void {
+    this.resetTimeout();
+    try {
+      this._onData(data);
+    } catch (error) {
+      this.server.logger.error(`${this.remote}: ${inspect(error)}`);
+      this.disconnect((error as Error).message);
+    }
+  }
+
   protected _onData(data: Buffer): void {
     if (data.length > MAX_PACKET_SIZE) {
       throw new RangeError("packet size too large");
@@ -142,7 +188,7 @@ export default class Connection extends EventEmitter<{
 
     this.buffer.writeBytes(data);
 
-    while (this.buffer.remaining > 0) {
+    while (this.buffer.remaining() > 0) {
       const readOffset = this.buffer.readOffset;
       let payload: MineBuffer;
 
@@ -151,6 +197,7 @@ export default class Connection extends EventEmitter<{
         payload = new MineBuffer(this.buffer.readBytes(length));
       } catch (e) {
         if (e instanceof RangeError && e.message === "readBytes() out-of-bounds") {
+          // TODO: better error handling
           this.buffer.readOffset = readOffset;
           break;
         }
@@ -161,7 +208,7 @@ export default class Connection extends EventEmitter<{
         const dataLength = payload.readVarInt();
         if (dataLength !== 0) {
           payload = new MineBuffer(this.compression.compress(payload.readRemaining()));
-          if (dataLength !== payload.remaining) {
+          if (dataLength !== payload.remaining()) {
             throw new RangeError("uncompressed length does not match");
           }
         }
@@ -171,7 +218,11 @@ export default class Connection extends EventEmitter<{
       this.emit("message", { packetID, payload });
     }
 
-    this.buffer = new MineBuffer(this.buffer.readRemaining());
+    if (this.buffer.remaining() > 0) {
+      this.buffer = new MineBuffer(this.buffer.readRemaining());
+    } else {
+      this.buffer = new MineBuffer();
+    }
   }
 
   protected _onError(error: unknown): void {

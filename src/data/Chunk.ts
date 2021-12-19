@@ -1,113 +1,61 @@
-import MineBuffer from "../utils/MineBuffer";
+import { BitArray } from "./BitArray";
+import { ChunkSection } from "./ChunkSection";
+// Adapted from:
+// https://github.com/PrismarineJS/prismarine-chunk/blob/3e617d8e39ed9863c46fe99c296eef82fc9eabaa/src/pc/1.16/ChunkColumn.js
+// License: MIT
 
-// TODO: WIP
-
-type BlockState = unknown;
-
-function getGlobalPaletteIdFromState(state: BlockState): number {
-  // TODO
-  void state;
-  return 0;
+export interface ChunkOptions {
+  minY?: number;
+  worldHeight?: number;
 }
 
-function getStatefromGlobalPaletteId(globalPaletteId: number): BlockState {
-  // TODO
-  void globalPaletteId;
-  return 0;
-}
+export class Chunk {
+  public readonly minY: number;
+  public readonly worldHeight: number;
+  public readonly numSections: number;
 
-export interface Palette {
-  idForState(state: BlockState): number;
-  stateForId(id: number): BlockState;
-  getBitsPerBlock(): number;
-  read(buffer: MineBuffer): void;
-  write(buffer: MineBuffer): void;
-}
+  public sectionMask: BitArray;
+  public sections: (ChunkSection | null)[];
+  public biomes: number[];
 
-export class IndirectPalette implements Palette {
-  private idToState: Map<number, BlockState> = new Map();
-  private stateToId: Map<BlockState, number> = new Map();
-  private bitsPerBlock: number;
+  public skyLightMask: BitArray;
+  public emptySkyLightMask: BitArray;
+  public skyLightSections: unknown[];
 
-  public constructor(bitsPerBlock: number) {
-    this.bitsPerBlock = bitsPerBlock;
-  }
+  public blockLightMask: BitArray;
+  public emptyBlockLightMask: BitArray;
+  public blockLightSections: unknown[];
 
-  public idForState(state: BlockState): number {
-    const id = this.stateToId.get(state);
-    if (typeof id === "undefined") {
-      throw new Error(`No id found for state ${state}`);
-    }
-    return id;
-  }
+  public constructor(options: ChunkOptions = {}) {
+    this.minY = options.minY ?? 0;
+    this.worldHeight = options.worldHeight ?? 256;
+    this.numSections = this.worldHeight >> 4;
 
-  public stateForId(id: number): BlockState {
-    const state = this.idToState.get(id);
-    if (typeof state === "undefined") {
-      throw new Error(`No state found for id ${id}`);
-    }
-    return state;
-  }
+    this.sectionMask = new BitArray({
+      bitsPerValue: 1,
+      capacity: this.numSections,
+    });
+    this.sections = Array(this.numSections).fill(null);
+    this.biomes = Array(4 * 4 * (this.worldHeight >> 2)).fill(0);
 
-  public getBitsPerBlock(): number {
-    return this.bitsPerBlock;
-  }
+    this.skyLightMask = new BitArray({
+      bitsPerValue: 1,
+      capacity: this.numSections + 2,
+    });
+    this.emptySkyLightMask = new BitArray({
+      bitsPerValue: 1,
+      capacity: this.numSections + 2,
+    });
+    this.skyLightSections = Array(this.numSections + 2).fill(null);
 
-  public read(buffer: MineBuffer): void {
-    this.idToState.clear();
-    this.stateToId.clear();
-    const count = buffer.readVarInt();
-    for (let i = 0; i < count; i++) {
-      const id = buffer.readVarInt();
-      const state = getStatefromGlobalPaletteId(id);
-      this.idToState.set(id, state);
-      this.stateToId.set(state, id);
-    }
-  }
-
-  public write(buffer: MineBuffer): void {
-    if (this.idToState.size !== this.stateToId.size) {
-      throw new Error("idToState and stateToId must be the same size");
-    }
-    buffer.writeVarInt(this.idToState.size);
-    for (let id = 0; id < this.idToState.size; id++) {
-      const state = this.stateForId(id);
-      buffer.writeVarInt(getGlobalPaletteIdFromState(state));
-    }
-  }
-}
-
-export class DirectPalette implements Palette {
-  public idForState(state: BlockState): number {
-    return getGlobalPaletteIdFromState(state);
-  }
-
-  public stateForId(id: number): BlockState {
-    return getStatefromGlobalPaletteId(id);
-  }
-
-  public getBitsPerBlock(): number {
-    return 0; // TODO
-    // return Math.ceil(Math.log2(BlockState.getAll().length));
-  }
-
-  public read(buffer: MineBuffer): void {
-    // Do nothing
-    void buffer;
-  }
-
-  public write(buffer: MineBuffer): void {
-    // Do nothing
-    void buffer;
-  }
-}
-
-export function choosePalette(bitsPerBlock: number): Palette {
-  if (bitsPerBlock <= 4) {
-    return new IndirectPalette(4);
-  } else if (bitsPerBlock <= 8) {
-    return new IndirectPalette(bitsPerBlock);
-  } else {
-    return new DirectPalette();
+    this.blockLightMask = new BitArray({
+      bitsPerValue: 1,
+      capacity: this.numSections + 2,
+    });
+    this.emptyBlockLightMask = new BitArray({
+      bitsPerValue: 1,
+      capacity: this.numSections + 2,
+    });
+    this.blockLightSections = Array(this.numSections + 2).fill(null);
   }
 }

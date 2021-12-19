@@ -17,10 +17,11 @@
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
-import MineBuffer from "../../../../../utils/MineBuffer";
 import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
 import { Player } from "../../../../../server/Player";
+import { InventoryHotbarSlot } from "../../../../../utils/Enums";
+import { MineBuffer } from "../../../../../../native/index";
 
 export class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -36,8 +37,9 @@ export class LoginStartMessage extends MessageHandler {
     const username = buffer.readString();
     // TODO: validate username w/ regex
 
-    player["_initialize"]({
+    player["__baseInitialize"]({
       username,
+      hotbarSlot: InventoryHotbarSlot.SLOT_1, // TODO: get from player data
     });
 
     this.server.logger.info(`${player.connection.remote}: Login start for username '${username}'`);

@@ -1,6 +1,6 @@
 import { IClientboundMessage } from "../../../Message";
 import { AllEntityStatus } from "../../../../../utils/Enums";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 
 export interface PlayClientboundEntityStatusMessageOptions {
   entityId: number;

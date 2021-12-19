@@ -19,18 +19,10 @@ import * as crypto from "crypto";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
-import MineBuffer from "../../../../../utils/MineBuffer";
 import LoginSetCompressionMessage from "../clientbound/LoginSetCompressionMessage";
 import LoginSuccessMessage from "../clientbound/LoginSuccessMessage";
-import { PlayClientboundPositionAndLookMessage } from "../../play/clientbound/PlayClientboundPositionAndLookMessage";
-import { PlayClientboundJoinGameMessage } from "../../play/clientbound/PlayClientboundJoinGameMessage";
-import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChannel } from "../../../../../utils/Enums";
-import { float, int, byte, double } from "../../../../../data/NBT";
-import { PlayClientboundPluginMessage } from "../../play/clientbound/PlayClientboundPluginMessage";
-import { PlayClientboundServerDifficultyMessage } from "../../play/clientbound/PlayClientboundServerDifficultyMessage";
-import { Vec5 } from "../../../../../utils/Geometry";
 import { Player } from "../../../../../server/Player";
-import { PlayClientboundEntityStatusMessage } from "../../play/clientbound/PlayClientboundEntityStatusMessage";
+import { MineBuffer } from "../../../../../../native/index";
 
 export class LoginEncryptionResponseMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -74,145 +66,12 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
       }),
     );
 
-    player.connection.state = ConnectionState.PLAY;
-
-    const joinGameResponse = new PlayClientboundJoinGameMessage({
-      entityId: 1,
-      isHardcore: false,
-      gamemode: GameMode.SURVIVAL,
-      previousGameMode: GameMode.NONE,
-      worlds: ["minecraft:overworld"],
-      dimensionCodec: {
-        "minecraft:dimension_type": {
-          type: "minecraft:dimension_type",
-          value: [
-            {
-              name: "minecraft:overworld",
-              id: int(0),
-              element: {
-                piglin_safe: byte(0), // TODO: implicitly convert boolean to byte
-                natural: byte(1),
-                ambient_light: float(0.0),
-                infiniburn: "minecraft:infiniburn_overworld",
-                respawn_anchor_works: byte(0),
-                has_skylight: byte(1),
-                bed_works: byte(1),
-                effects: "minecraft:overworld",
-                has_raids: byte(1),
-                min_y: int(0),
-                height: int(256),
-                logical_height: int(256),
-                coordinate_scale: double(1.0),
-                ultrawarm: byte(0),
-                has_ceiling: byte(0),
-              },
-            },
-          ],
-        },
-        "minecraft:worldgen/biome": {
-          type: "minecraft:worldgen/biome",
-          value: [
-            {
-              name: "minecraft:plains",
-              id: int(1),
-              element: {
-                precipitation: "rain",
-                effects: {
-                  sky_color: int(7907327),
-                  water_fog_color: int(329011),
-                  fog_color: int(12638463),
-                  water_color: int(4159204),
-                  mood_sound: {
-                    tick_delay: int(6000),
-                    offset: double(2.0),
-                    sound: "minecraft:ambient.cave",
-                    block_search_extent: int(8),
-                  },
-                },
-                depth: float(0.125),
-                temperature: float(0.8),
-                scale: float(0.05),
-                downfall: float(0.4),
-                category: "plains",
-              },
-            },
-          ],
-        },
-      },
-      dimension: {
-        piglin_safe: byte(0), // TODO: implicitly convert boolean to byte
-        natural: byte(1),
-        ambient_light: float(0.0),
-        infiniburn: "minecraft:infiniburn_overworld",
-        respawn_anchor_works: byte(0),
-        has_skylight: byte(1),
-        bed_works: byte(1),
-        effects: "minecraft:overworld",
-        has_raids: byte(1),
-        min_y: int(0),
-        height: int(256),
-        logical_height: int(256),
-        coordinate_scale: double(1.0),
-        ultrawarm: byte(0),
-        has_ceiling: byte(0),
-      },
-      worldName: "minecraft:overworld",
-      hashedSeed: 0n,
-      maxPlayers: 20,
-      viewDistance: 10,
-      simulationDistance: 10,
-      reducedDebugInfo: false,
-      enableRespawnScreen: false,
-      isDebug: false,
-      isFlat: false,
-    });
-    player.sendPacket(joinGameResponse);
-
-    await this.server.nextTick();
-
-    player.sendPacket(
-      new PlayClientboundServerDifficultyMessage({
-        difficulty: Difficulty.NORMAL,
-        difficultyLocked: false,
-      }),
-    );
-
-    player.sendPacket(
-      new PlayClientboundPluginMessage({
-        channel: PluginChannel.MINECRAFT_BRAND,
-        data: new MineBuffer().writeString("MineNode"),
-      }),
-    );
-
-    player.setHotbarSlot(InventoryHotbarSlot.SLOT_1);
+    await player.setState(ConnectionState.PLAY);
 
     // TODO: Declare recipes
     // TODO: Tags
-
-    player.sendPacket(
-      new PlayClientboundEntityStatusMessage({
-        entityId: player.id,
-        status: AllEntityStatus.PLAYER__SET_OP_PERMISSION_4, // TODO: read from config, validate, etc.
-      }),
-    );
-
     // TODO: Declare commands
     // TODO: Unlock recipes
-
-    player.sendPacket(
-      new PlayClientboundPositionAndLookMessage({
-        position: new Vec5(0, 1, 0, 0, 0),
-        flags: {
-          x: false,
-          y: false,
-          z: false,
-          y_rot: false,
-          x_rot: false,
-        },
-        teleportId: 69,
-        dismountVehicle: false,
-      }),
-    );
 
     // TODO: Player info (Add Player action)
     // TODO: Player info (Update latency action)

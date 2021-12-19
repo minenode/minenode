@@ -1,6 +1,6 @@
 import { Chat } from "../../../../../utils/Chat";
-import MineBuffer from "../../../../../utils/MineBuffer";
 import { IClientboundMessage } from "../../../Message";
+import { MineBuffer } from "../../../../../../native/index";
 
 export interface PlayClientboundDisconnectMessageOptions {
   reason: Chat;
@@ -16,6 +16,6 @@ export class PlayClientboundDisconnectMessage implements IClientboundMessage {
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer.writeChat(this.reason);
+    buffer.writeString(JSON.stringify(this.reason));
   }
 }

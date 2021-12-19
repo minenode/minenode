@@ -17,7 +17,7 @@
 import { MessageHandler } from "../../../Message";
 import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
 import { Player } from "../../../../../server/Player";
 
 export class PlayServerboundClientSettingsMessage extends MessageHandler {
@@ -40,8 +40,8 @@ export class PlayServerboundClientSettingsMessage extends MessageHandler {
     const enableTextFiltering = buffer.readBoolean(); // always false
     const allowServerListings = buffer.readBoolean();
 
-    this.server.logger.debug(
-      `${player.connection.remote}: client settings (locale = ${locale}, viewDistance = ${viewDistance}, chatMode = ${chatMode}, chatColors = ${chatColors}, displayedSkinParts = ${displayedSkinParts}, mainHand = ${mainHand}, enableTextFiltering = ${enableTextFiltering}, allowServerListings = ${allowServerListings})`,
-    );
+    // TODO: handle
+    void locale, viewDistance, chatMode, chatColors, displayedSkinParts, mainHand, enableTextFiltering, allowServerListings;
+    void player;
   }
 }

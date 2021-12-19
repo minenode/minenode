@@ -1,6 +1,7 @@
 import { IClientboundMessage } from "../../../Message";
 import { Vec2 } from "../../../../../utils/Geometry";
-import MineBuffer from "../../../../../utils/MineBuffer";
+import { MineBuffer } from "../../../../../../native/index";
+import { encodeNBT } from "../../../../../data/NBT";
 
 export interface PlayClientboundChunkDataMessageOptions {
   chunkLocation: Vec2;
@@ -42,20 +43,20 @@ export class PlayClientboundChunkDataMessage implements IClientboundMessage {
   }
 
   public encode(buffer: MineBuffer): void {
-    buffer
-      .writeInt(this.chunkLocation.x)
-      .writeInt(this.chunkLocation.y)
-      .writeNBT(this.heightMap)
-      .writeVarInt(this.data.length)
-      .writeBytes(this.data)
-      .writeVarInt(0) // TODO: blockEntities
-      .writeBoolean(this.trustEdges)
-      .writeUByte(this.skyLightMask)
-      .writeUByte(this.blockLightMask)
-      .writeUByte(this.emptySkyLightMask)
-      .writeVarInt(this.skyLight.length)
-      .writeBytes(this.skyLight)
-      .writeVarInt(this.blockLight.length)
-      .writeBytes(this.blockLight);
+    buffer.writeInt(this.chunkLocation.x);
+    buffer.writeInt(this.chunkLocation.y);
+    // buffer.writeNBT(this.heightMap);
+    encodeNBT(buffer, this.heightMap);
+    buffer.writeVarInt(this.data.length);
+    buffer.writeBytes(Buffer.from(this.data));
+    buffer.writeVarInt(0); // TODO: blockEntities
+    buffer.writeBoolean(this.trustEdges);
+    buffer.writeUByte(this.skyLightMask);
+    buffer.writeUByte(this.blockLightMask);
+    buffer.writeUByte(this.emptySkyLightMask);
+    buffer.writeVarInt(this.skyLight.length);
+    buffer.writeBytes(Buffer.from(this.skyLight));
+    buffer.writeVarInt(this.blockLight.length);
+    buffer.writeBytes(Buffer.from(this.blockLight));
   }
 }
