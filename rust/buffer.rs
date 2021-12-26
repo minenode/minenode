@@ -1,5 +1,7 @@
 use napi::bindgen_prelude::*;
 
+use crate::geometry::Vec3;
+
 fn bigint_value(value: &BigInt) -> i64 {
   if value.words.len() == 0 {
     0
@@ -338,24 +340,21 @@ impl MineBuffer {
     self.read_u16().map(|v| v as u32)
   }
 
-  #[napi(js_name="readPosition")] // TODO: return as Vec3
-  pub fn read_position(&mut self) -> Result<serde_json::Value> {
+  #[napi(js_name="readPosition")]
+  pub fn read_position(&mut self) -> Result<Vec3> {
     let val = self.read_u64()?;
-    Ok(serde_json::json!({
-      "x": (val >> 38) as f64,
-      "y": ((val >> 26) & 0xfff) as f64,
-      "z": (val & 0x3ffffff) as f64
-    }))
+    Ok(Vec3::new(
+      (val >> 38) as f64,
+      ((val >> 26) & 0xfff) as f64,
+      (val & 0x3ffffff) as f64
+    ))
   }
 
   #[napi(js_name="readUUID")]
   pub fn read_uuid(&mut self) -> Result<String> {
     let bytes: [u8; 16] = self.read_bytes(16)?.try_into().unwrap();
     Ok(uuid::Uuid::from_bytes(bytes).to_string())
-  }
-
-  // #[napi(js_name="readPosition")]
-  
+  }  
 
   // TODO: implement NBT
 
@@ -425,10 +424,10 @@ impl MineBuffer {
   }
 
   #[napi(js_name="writePosition")]
-  pub fn write_position(&mut self, val: serde_json::Value) {
-    let x = val["x"].as_f64().unwrap() as i64;
-    let y = val["y"].as_f64().unwrap() as i64;
-    let z = val["z"].as_f64().unwrap() as i64;
+  pub fn write_position(&mut self, val: &Vec3) {
+    let x = val.x as i64;
+    let y = val.y as i64;
+    let z = val.z as i64;
     let val = ((x & 0x3ffffff) << 38) | ((y & 0xfff) << 26) | (z & 0x3ffffff);
     self.write(&val.to_be_bytes());
   }

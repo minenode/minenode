@@ -39,7 +39,7 @@ export class PlayServerboundPlayerPositionMessage extends MessageHandler {
 
     const newPos = new Vec3(x, y, z);
 
-    const distance = newPos.distance(player.position);
+    const distance = newPos.distance(player.position.toVec3());
 
     if (distance > 10) {
       // player.disconnect(`Player moved too far (distance = ${distance})`);

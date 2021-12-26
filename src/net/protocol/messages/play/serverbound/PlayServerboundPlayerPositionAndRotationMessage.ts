@@ -50,7 +50,7 @@ export class PlayServerboundPlayerPositionAndRotationMessage extends MessageHand
 
     if (onGround) {
       player.onGround = true;
-      player.lastPositionOnGround = newPos;
+      player.lastPositionOnGround = newPos.toVec3();
       player.lastTickOnGround = this.server.tickCount;
     } else if (player.lastPositionOnGround && player.lastTickOnGround) {
       player.onGround = false;
@@ -63,7 +63,7 @@ export class PlayServerboundPlayerPositionAndRotationMessage extends MessageHand
       }
     } else {
       player.onGround = false;
-      player.lastPositionOnGround = newPos; // We don't know where we are, so assume we're on the ground
+      player.lastPositionOnGround = newPos.toVec3(); // We don't know where we are, so assume we're on the ground
       player.lastTickOnGround = this.server.tickCount;
     }
 

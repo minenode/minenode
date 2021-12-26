@@ -10,7 +10,7 @@ pub struct Vec2 {
 impl Vec2 {
   #[napi(constructor)]
   pub fn new(x: f64, y: f64) -> Self {
-    Vec2 { x, y }
+    Self { x, y }
   }
 
   #[napi(factory)]
@@ -195,8 +195,7 @@ impl Vec3 {
 }
 
 #[napi]
-#[allow(dead_code)]
-struct Vec5 {
+pub struct Vec5 {
   pub x: f64,
   pub y: f64,
   pub z: f64,
@@ -205,7 +204,6 @@ struct Vec5 {
 }
 
 #[napi]
-#[allow(dead_code)]
 impl Vec5 {
   #[napi(constructor)]
   pub fn new(x: f64, y: f64, z: f64, yaw: f64, pitch: f64) -> Self {
@@ -281,7 +279,6 @@ impl Vec5 {
   }
 
   #[napi]
-  // angle is in radians
   pub fn rotate(&mut self, angle: f64) {
     let cos = angle.cos();
     let sin = angle.sin();
@@ -309,5 +306,22 @@ impl Vec5 {
     let dyaw = self.yaw - other.yaw;
     let dpitch = self.pitch - other.pitch;
     (dx * dx + dy * dy + dz * dz + dyaw * dyaw + dpitch * dpitch).sqrt()
+  }
+
+  #[napi]
+  pub fn to_vec3(&self) -> Vec3 {
+    Vec3 { x: self.x, y: self.y, z: self.z }
+  }
+
+  #[napi]
+  pub fn to_vec2(&self) -> Vec2 {
+    Vec2 { x: self.x, y: self.y }
+  }
+
+  #[napi]
+  pub fn intersects_with(&self, _other: &Vec3) -> bool {
+    // Test if a ray from the origin intersects with the point
+    // TODO
+    false
   }
 }

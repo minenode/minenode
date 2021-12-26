@@ -35,7 +35,7 @@ export class MineBuffer {
   readString(): string
   readShort(): number
   readUShort(): number
-  readPosition(): any
+  readPosition(): Vec3
   readUUID(): string
   writeBytes(buf: Buffer): void
   writeUByte(val: number): void
@@ -46,7 +46,7 @@ export class MineBuffer {
   writeInt(val: number): void
   writeUInt(val: number): void
   writeLong(val: BigInt): void
-  writePosition(val: any): void
+  writePosition(val: Vec3): void
   writeUUID(val: string): void
   writeShort(val: number): void
   writeUShort(val: number): void
@@ -108,4 +108,7 @@ export class Vec5 {
   rotate(angle: number): void
   normalize(): void
   distance(other: Vec5): number
+  toVec3(): Vec3
+  toVec2(): Vec2
+  intersectsWith(other: Vec3): boolean
 }

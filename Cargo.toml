@@ -9,7 +9,6 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 path = "rust/lib.rs"
-# hematite-nbt = "0.5.2"
 
 [dependencies]
 futures = "0.3"
