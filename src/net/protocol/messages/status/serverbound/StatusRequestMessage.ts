@@ -41,8 +41,10 @@ export class StatusRequestMessageHandler extends MessageHandler {
       },
       players: {
         max: this.server.options.maxPlayers,
-        online: [...this.server.players].filter(conn => conn.connection.state === ConnectionState.PLAY).length, // TODO: this should be players, not connections
-        sample: [], // TODO
+        online: [...this.server.players].filter(player => player.connection.state === ConnectionState.PLAY).length,
+        sample: [...this.server.players]
+          .filter(player => player.connection.state === ConnectionState.PLAY)
+          .map(player => ({ name: player.username, id: player.uuid })),
       },
       description: formatChat(this.server.options.motd, "&"),
       favicon: this.server.encodedFavicon,
