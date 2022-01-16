@@ -252,8 +252,12 @@ export class Player extends Entity<PlayerInitializeOptions> {
         );
         break;
       }
-      case ConnectionState.HANDSHAKE: { throw new Error('Not implemented yet: ConnectionState.HANDSHAKE case') }
-      case ConnectionState.STATUS: { throw new Error('Not implemented yet: ConnectionState.STATUS case') }
+      case ConnectionState.HANDSHAKE: {
+        break;
+      }
+      case ConnectionState.STATUS: {
+        break;
+      }
     }
   }
 
