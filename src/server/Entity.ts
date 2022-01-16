@@ -10,7 +10,8 @@ export abstract class Entity<T> extends Base<T> {
 
   public constructor(server: Server) {
     super(server);
-    this.id = server._nextEntityId++;
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    this.id = server["_nextEntityId"]++;
     this.uuid = uuid.v4();
   }
 }
