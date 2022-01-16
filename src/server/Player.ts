@@ -87,9 +87,8 @@ export class Player extends Entity<PlayerInitializeOptions> {
   }
 
   public set hotbarSlot(slot: InventoryHotbarSlot) {
-    // this._assert(this.connection.state === ConnectionState.PLAY, "Player.hotbarSlot can only be set in PLAY state");
     if (this.connection.state !== ConnectionState.PLAY) {
-      this.server.logger.warn(`Player.hotbarSlot can only be set in PLAY state, but is set to ${slot}`);
+      this.server.logger.debug(`Player.hotbarSlot can only be set in PLAY state, but is set to ${slot}`);
       this.connection.once("stateChange", () => {
         if (this.connection.state === ConnectionState.PLAY) {
           this.hotbarSlot = slot;
