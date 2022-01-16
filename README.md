@@ -23,6 +23,7 @@ Join our Discord server if you'd like to contribute, or to stay up to date on pr
 To compile/run the project, you will need:
 
 - Node.JS 16+
+- Rust compiler toolchain + cargo (<https://rustup.rs/>)
 - Yarn package manager (`npm install -g yarn`)
 
 Before contributing, please read the [Contribution Guidelines](CONTRIBUTING.md).
