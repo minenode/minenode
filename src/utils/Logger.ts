@@ -170,6 +170,7 @@ export class Logger {
     }
     this.name = name;
     this.consumers = consumers;
+    Logger.loggers.set(name, this);
   }
 
   public withConsumer(consumer: LogConsumer): this {
@@ -183,7 +184,6 @@ export class Logger {
     const existing = Logger.loggers.get(name);
     if (!existing) {
       const logger = new Logger(name);
-      Logger.loggers.set(name, logger);
       return logger;
     }
     return existing;
