@@ -2,9 +2,9 @@
 
 # MineNode
 
-A _Minecraft: Java Edition_ server built on top of Node.JS.
+A _Minecraft: Java Edition_ server built on top of Node.JS and Rust.
 
-![](https://img.shields.io/badge/Minecraft-1.18-brightgreen)
+![](https://img.shields.io/badge/Minecraft-1.18.1-brightgreen)
 [![](https://github.com/minenode/minenode/actions/workflows/ci.yml/badge.svg)](https://github.com/minenode/minenode/actions/workflows/ci.yml)
 [![Discord](https://img.shields.io/discord/771964031903727646?color=5865F2&label=Discord&logo=discord&logoColor=white)](https://discord.gg/khzfmUM8bt)
 
@@ -35,4 +35,4 @@ This project is licensed under the GNU Affero General Public License (AGPL), Ver
 
 Contributors: Please read the [Contribution Guidelines](CONTRIBUTING.md).
 
-Copyright &copy; 2021 MineNode.
+Copyright &copy; 2022 MineNode.
