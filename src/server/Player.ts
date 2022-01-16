@@ -23,6 +23,7 @@ import { MineBuffer } from "../../native";
 import { destroy } from "../core/Base";
 import { int, float, double } from "../data/NBT";
 import { IClientboundMessage } from "../net/protocol/Message";
+import { PlayClientboundChatMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundChatMessage";
 import { PlayClientboundEntityStatusMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundEntityStatusMessage";
 import { PlayClientboundHeldItemChangeMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundHeldItemChangeMessage";
 import { PlayClientboundJoinGameMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundJoinGameMessage";
@@ -31,7 +32,7 @@ import { PlayClientboundPluginMessage } from "../net/protocol/messages/play/clie
 import { PlayClientboundPositionAndLookMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundPositionAndLookMessage";
 import { PlayClientboundServerDifficultyMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundServerDifficultyMessage";
 import { Chat } from "../utils/Chat";
-import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChannel } from "../utils/Enums";
+import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChannel, ClientChatPosition } from "../utils/Enums";
 import { Vec3, Vec5 } from "../utils/Geometry";
 
 export interface PlayerInitializeOptions {
@@ -107,6 +108,25 @@ export class Player extends Entity<PlayerInitializeOptions> {
   public get hotbarSlot(): InventoryHotbarSlot {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return this._assertInitialized("hotbarSlot") && this.#hotbarSlot!;
+  }
+
+  public sendChat(chat: Chat, position: ClientChatPosition = ClientChatPosition.CHAT_BOX, sender: string | null = null): void {
+    if (this.connection.state === ConnectionState.PLAY) {
+      this.sendPacket(
+        new PlayClientboundChatMessage({
+          chat,
+          position,
+          sender,
+        }),
+      );
+    } else {
+      this.server.logger.debug(`Player.sendChat can only be called in PLAY state, but is called in ${this.connection.state}`);
+      this.connection.once("stateChange", () => {
+        if (this.connection.state === ConnectionState.PLAY) {
+          this.sendChat(chat, position, sender);
+        }
+      });
+    }
   }
 
   public async setState(state: ConnectionState): Promise<void> {

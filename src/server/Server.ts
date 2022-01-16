@@ -25,8 +25,10 @@ import Connection, { ConnectionState } from "./Connection";
 import { Player } from "./Player";
 import { destroy } from "../core/Base";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
+import { Chat, consoleFormatChat } from "../utils/Chat";
 import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
 import { getRootDirectory } from "../utils/DeployUtils";
+import { ClientChatPosition } from "../utils/Enums";
 import { Logger, LogLevel, StdoutConsumer, FileConsumer } from "../utils/Logger";
 import { Performance } from "../utils/Performance";
 
@@ -72,6 +74,17 @@ export default class Server extends EventEmitter<{
     this.handlerFactory = new MessageHandlerFactory(this);
   }
 
+  public broadcastChat(chat: Chat, position: ClientChatPosition = ClientChatPosition.CHAT_BOX, sender: string | null = null, log = true): void {
+    for (const player of this.players) {
+      if (player.connection.state === ConnectionState.PLAY) {
+        player.sendChat(chat, position, sender);
+      }
+    }
+    if (log) {
+      this.logger.info(`[Broadcast:${ClientChatPosition[position]}] ${consoleFormatChat(chat)}`);
+    }
+  }
+
   protected generateKeyPair(): void {
     this.keypair = crypto.generateKeyPairSync("rsa", {
       modulusLength: 1024,
@@ -88,10 +101,9 @@ export default class Server extends EventEmitter<{
     if (fs.existsSync(serverIconPath) && fs.statSync(serverIconPath).isFile()) {
       if (fs.statSync(serverIconPath).size > (65535 * 3) / 4) {
         this.logger.error(`${serverIconPath} is too large. Cannot exceed ${(65535 * 3) / 4} bytes.`);
-        
       } else {
         const raw = fs.readFileSync(serverIconPath);
-        this.encodedFavicon = `data:image/png;base64,${  raw.toString("base64")}`;
+        this.encodedFavicon = `data:image/png;base64,${raw.toString("base64")}`;
         this.logger.info(`loaded favicon from ${serverIconPath} (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
       }
     } else {
@@ -115,6 +127,20 @@ export default class Server extends EventEmitter<{
     this.running = true;
     this.ticker = setInterval(this._tick.bind(this), 1000 / 20);
     this.logger.info("server listening");
+  }
+
+  public stop(): void {
+    this.running = false;
+    if (this.ticker) {
+      clearInterval(this.ticker);
+    }
+    for (const player of this.players) {
+      player.disconnect("Server is shutting down");
+    }
+    this.tcpServer.close();
+    this.logger.info("server stopped");
+    this.tcpServer.removeAllListeners();
+    this.removeAllListeners();
   }
 
   protected _tick(): void {

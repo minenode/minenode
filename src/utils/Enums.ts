@@ -57,6 +57,12 @@ export enum InventoryHotbarSlot {
   SLOT_9 = 8,
 }
 
+export enum ClientChatPosition {
+  CHAT_BOX = 0,
+  SYSTEM_MESSAGE = 1,
+  GAME_INFO = 2,
+}
+
 export enum AllEntityStatus {
   // Entity
   ENTITY__HONEY_BLOCK_SLIDE_PARTICLES = 0,
