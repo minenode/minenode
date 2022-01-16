@@ -1,18 +1,19 @@
-// Logger.ts - Logging utility
-// Copyright (C) 2021 MineNode
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+/*
+ * Copyright (C) 2022 MineNode
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 import fs from "fs";
 import path from "path";
@@ -118,14 +119,14 @@ export class FileConsumer extends LogConsumer {
   protected override log(entry: LogEntry): void {
     const formatted = `${entry.timestamp.toISOString()} [${entry.name}/${LogLevel[entry.level]}] ${entry.formatted}`;
 
-    const filename = `${entry.timestamp.toISOString().split("T")[0]  }.log`;
+    const filename = `${entry.timestamp.toISOString().split("T")[0]}.log`;
     const filepath = path.join(this.directory, filename);
     fs.mkdirSync(this.directory, { recursive: true });
 
     // Remove ANSI escape codes before writing to the file
     // See https://stackoverflow.com/a/29497680
     // eslint-disable-next-line no-control-regex
-    fs.appendFileSync(filepath, `${formatted.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "")  }\n`);
+    fs.appendFileSync(filepath, `${formatted.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "")}\n`);
 
     this.archiveIfNeeded();
   }
@@ -135,7 +136,7 @@ export class FileConsumer extends LogConsumer {
   private archiveIfNeeded(): void {
     // eslint-disable-next-line @typescript-eslint/require-array-sort-compare
     const logFiles = fs.readdirSync(this.directory).sort();
-    const needArchive = logFiles.filter(f => f.endsWith(".log") && f !== `${new Date().toISOString().split("T")[0]  }.log`);
+    const needArchive = logFiles.filter(f => f.endsWith(".log") && f !== `${new Date().toISOString().split("T")[0]}.log`);
 
     if (!this.#archiveLock && needArchive.length > 0) {
       this.#archiveLock = true;

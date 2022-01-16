@@ -1,3 +1,4 @@
+/* eslint-disable license-header/header */
 import { BitArray } from "./BitArray";
 import { ChunkSection } from "./ChunkSection";
 // Adapted from:

@@ -1,3 +1,4 @@
+/* eslint-disable license-header/header */
 import { MineBuffer } from "../../native";
 // Adapted from:
 // https://github.dev/PrismarineJS/prismarine-chunk/blob/3e617d8e39ed9863c46fe99c296eef82fc9eabaa/src/pc/common/BitArray.js
@@ -118,8 +119,8 @@ export class BitArray {
   public static fromArray(array: ReadWriteArrayLike<number>, bitsPerValue: number): BitArray {
     const data = [];
     let i = 0;
-      let curLong = 0;
-      let curBit = 0;
+    let curLong = 0;
+    let curBit = 0;
     while (i < array.length) {
       curLong |= array[i] << curBit;
       curBit += bitsPerValue;

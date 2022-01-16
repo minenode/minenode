@@ -1,18 +1,19 @@
-// EncryptionState.ts - handle symmetric encryption state
-// Copyright (C) 2021 MineNode
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+/*
+ * Copyright (C) 2022 MineNode
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 import * as crypto from "crypto";
 
@@ -41,16 +42,14 @@ export default class EncryptionState {
   public updateCipher(data: Buffer): Buffer {
     if (this.cipher) {
       return this.cipher.update(data);
-    } 
-      throw new Error("EncryptionState.update called before cipher was initiailized");
-    
+    }
+    throw new Error("EncryptionState.update called before cipher was initiailized");
   }
 
   public updateDecipher(data: Buffer): Buffer {
     if (this.decipher) {
       return this.decipher.update(data);
-    } 
-      throw new Error("EncryptionState.update called before cipher was initiailized");
-    
+    }
+    throw new Error("EncryptionState.update called before cipher was initiailized");
   }
 }

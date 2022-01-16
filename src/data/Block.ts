@@ -1,3 +1,4 @@
+/* eslint-disable license-header/header */
 export class Block {
   public type: number;
   public metadata: unknown;

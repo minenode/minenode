@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2022 MineNode
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import EventEmitter from "eventemitter3";
 import Server from "../server/Server";
 
@@ -28,7 +45,7 @@ export abstract class Base<T, E extends object = {}> extends EventEmitter<E & { 
   protected _check<K extends keyof this>(property: K): Exclude<this[K], null | undefined> {
     if (!this.#initialized) {
       throw new Error(`${this.constructor.name}#${property.toString()} accessed before initialize`);
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (this[property] === null || typeof this[property] === "undefined") {
       throw new Error(`${this.constructor.name}#${property.toString()} is null`);
     }
