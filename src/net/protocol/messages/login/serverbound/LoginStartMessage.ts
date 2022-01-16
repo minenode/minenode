@@ -35,7 +35,11 @@ export class LoginStartMessage extends MessageHandler {
 
   public handle(buffer: MineBuffer, player: Player): void {
     const username = buffer.readString();
-    // TODO: validate username w/ regex
+
+    if (!/^[a-zA-Z0-9_]{2,16}$/.test(username)) {
+      player.disconnect("Invalid username");
+      return;
+    }
 
     player["__baseInitialize"]({
       username,
