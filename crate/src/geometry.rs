@@ -1,3 +1,4 @@
+use napi_derive::napi;
 use serde_json::json;
 
 #[napi]
