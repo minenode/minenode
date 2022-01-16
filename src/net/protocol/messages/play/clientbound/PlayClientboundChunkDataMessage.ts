@@ -1,7 +1,7 @@
-import { IClientboundMessage } from "../../../Message";
-import { Vec2 } from "../../../../../utils/Geometry";
 import { MineBuffer } from "../../../../../../native/index";
 import { encodeNBT } from "../../../../../data/NBT";
+import { Vec2 } from "../../../../../utils/Geometry";
+import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundChunkDataMessageOptions {
   chunkLocation: Vec2;

@@ -4,7 +4,7 @@ import Server from "../server/Server";
 const kDestroy = Symbol("destroy");
 
 interface Destroyable {
-  [kDestroy](): void;
+  [kDestroy]: () => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -27,9 +27,10 @@ export abstract class Base<T, E extends object = {}> extends EventEmitter<E & { 
 
   protected _check<K extends keyof this>(property: K): Exclude<this[K], null | undefined> {
     if (!this.#initialized) {
-      throw new Error(`${this.constructor.name}#${property} accessed before initialize`);
+      throw new Error(`${this.constructor.name}#${property.toString()} accessed before initialize`);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (this[property] === null || typeof this[property] === "undefined") {
-      throw new Error(`${this.constructor.name}#${property} is null`);
+      throw new Error(`${this.constructor.name}#${property.toString()} is null`);
     }
     return this[property] as Exclude<this[K], null | undefined>;
   }

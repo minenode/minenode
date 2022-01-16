@@ -128,7 +128,7 @@ export function consoleFormatChat(chat: Chat): string {
   // coerce chat to a string
   let chatString = "";
   if (typeof chat === "object") {
-    for (const node of [chat, ...(chat.extra || [])]) {
+    for (const node of [chat, ...(chat.extra ?? [])]) {
       if (typeof node === "string") chatString += node;
       else {
         if (node.bold) chatString += ChatColor.BOLD;
@@ -221,7 +221,7 @@ export function consoleFormatChat(chat: Chat): string {
       ChatColor.ITALIC,
       ChatColor.RESET,
     ]) {
-      if (chatString.substring(0, formatCode.length) === formatCode) {
+      if (chatString.startsWith(formatCode)) {
         format = {
           [ChatColor.BLACK]: format.hex("#000000"),
           [ChatColor.DARK_BLUE]: format.hex("#0000AA"),
@@ -248,11 +248,9 @@ export function consoleFormatChat(chat: Chat): string {
         }[formatCode];
         chatString = chatString.substring(formatCode.length);
         continue parse;
-      } else {
-        if (slice.includes(formatCode)) {
+      } else if (slice.includes(formatCode)) {
           slice = slice.substring(0, slice.indexOf(formatCode));
         }
-      }
     }
     result += format(slice);
     chatString = chatString.substring(slice.length);

@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../../../../server/Server";
 import { MineBuffer } from "../../../../../../native/index";
-import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
+import { ConnectionState } from "../../../../../server/Connection";
 import { Player } from "../../../../../server/Player";
+import Server from "../../../../../server/Server";
 import { Vec3 } from "../../../../../utils/Geometry";
 
 export class PlayServerboundPlayerPositionMessage extends MessageHandler {

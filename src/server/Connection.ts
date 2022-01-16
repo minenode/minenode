@@ -17,15 +17,15 @@
 import * as net from "net";
 import util, { inspect } from "util";
 
-import { MineBuffer } from "../../native/index";
-import { IClientboundMessage } from "../net/protocol/Message";
-import EncryptionState from "./EncryptionState";
 import CompressionState from "./CompressionState";
-import { Chat, consoleFormatChat } from "../utils/Chat";
-import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
+import EncryptionState from "./EncryptionState";
 import Server from "./Server";
-import { PlayClientboundDisconnectMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundDisconnectMessage";
+import { MineBuffer } from "../../native/index";
 import { Base } from "../core/Base";
+import { IClientboundMessage } from "../net/protocol/Message";
+import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
+import { PlayClientboundDisconnectMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundDisconnectMessage";
+import { Chat, consoleFormatChat } from "../utils/Chat";
 
 export const MAX_PACKET_SIZE = 1024 * 1024;
 
@@ -79,7 +79,7 @@ export default class Connection extends Base<
     super(server);
 
     this.socket = socket;
-    this.remote = `${socket.remoteAddress}:${socket.remotePort}`;
+    this.remote = `${socket.remoteAddress!}:${socket.remotePort!}`;
 
     this.encryption = new EncryptionState();
     this.compression = new CompressionState();
@@ -155,10 +155,13 @@ export default class Connection extends Base<
       const msg = new LoginDisconnectMessage(reason);
       this.writeMessage(msg);
       this.socket.end(); // async
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (this.state === ConnectionState.PLAY) {
       const msg = new PlayClientboundDisconnectMessage({ reason });
       this.writeMessage(msg);
       this.socket.end(); // async
+    } else {
+      this.hardDisconnect();
     }
   }
 

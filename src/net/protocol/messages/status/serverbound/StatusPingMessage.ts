@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../../../../server/Server";
 import { MineBuffer } from "../../../../../../native/index";
-import { ConnectionState } from "../../../../../server/Connection";
 import { MessageHandler } from "../../../../../net/protocol/Message";
-import StatusPongMessage from "../clientbound/StatusPongMessage";
+import { ConnectionState } from "../../../../../server/Connection";
 import { Player } from "../../../../../server/Player";
+import Server from "../../../../../server/Server";
+import StatusPongMessage from "../clientbound/StatusPongMessage";
 
 export class StatusPingMessageHandler extends MessageHandler {
   public constructor(server: Server) {

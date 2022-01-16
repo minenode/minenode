@@ -16,13 +16,13 @@
 
 import * as crypto from "crypto";
 
+import { MineBuffer } from "../../../../../../native/index";
 import { MessageHandler } from "../../../../../net/protocol/Message";
-import Server from "../../../../../server/Server";
 import { ConnectionState } from "../../../../../server/Connection";
+import { Player } from "../../../../../server/Player";
+import Server from "../../../../../server/Server";
 import LoginSetCompressionMessage from "../clientbound/LoginSetCompressionMessage";
 import LoginSuccessMessage from "../clientbound/LoginSuccessMessage";
-import { Player } from "../../../../../server/Player";
-import { MineBuffer } from "../../../../../../native/index";
 
 export class LoginEncryptionResponseMessage extends MessageHandler {
   public constructor(server: Server) {

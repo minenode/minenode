@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { MessageHandler } from "../../../Message";
-import Server from "../../../../../server/Server";
-import { ConnectionState } from "../../../../../server/Connection";
 import { MineBuffer } from "../../../../../../native/index";
+import { ConnectionState } from "../../../../../server/Connection";
 import { Player } from "../../../../../server/Player";
+import Server from "../../../../../server/Server";
+import { MessageHandler } from "../../../Message";
 
 export class PlayServerboundClientSettingsMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -41,6 +41,7 @@ export class PlayServerboundClientSettingsMessage extends MessageHandler {
     const allowServerListings = buffer.readBoolean();
 
     // TODO: handle
+    // eslint-disable-next-line no-sequences
     void locale, viewDistance, chatMode, chatColors, displayedSkinParts, mainHand, enableTextFiltering, allowServerListings;
     void player;
   }

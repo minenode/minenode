@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { PluginChannel } from "../../../../../utils/Enums";
 import { MineBuffer } from "../../../../../../native/index";
+import { PluginChannel } from "../../../../../utils/Enums";
 import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundPluginMessageOptions {

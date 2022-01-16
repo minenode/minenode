@@ -10,7 +10,7 @@ export abstract class Entity<T> extends Base<T> {
 
   public constructor(server: Server) {
     super(server);
-    this.id = server["_nextEntityId"]++;
+    this.id = server._nextEntityId++;
     this.uuid = uuid.v4();
   }
 }

@@ -14,22 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../../server/Server";
-import { MessageHandler } from "../Message";
-import { ConnectionState } from "../../../server/Connection";
 
 import { HandshakeMessageHandler } from "./handshake/serverbound/HandshakeMessage";
-import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage";
-import { StatusRequestMessageHandler } from "./status/serverbound/StatusRequestMessage";
-import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
 import { LoginEncryptionResponseMessage } from "./login/serverbound/LoginEncryptionResponseMessage";
-import { PlayServerboundPlayerPositionMessage } from "./play/serverbound/PlayServerboundPlayerPositionMessage";
+import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
+import { PlayServerboundChatMessage } from "./play/serverbound/PlayServerboundChatMessage";
 import { PlayServerboundClientSettingsMessage } from "./play/serverbound/PlayServerboundClientSettingsMessage";
+import { PlayServerboundKeepAliveMessage } from "./play/serverbound/PlayServerboundKeepAliveMessage";
+import { PlayServerboundPlayerPositionAndRotationMessage } from "./play/serverbound/PlayServerboundPlayerPositionAndRotationMessage";
+import { PlayServerboundPlayerPositionMessage } from "./play/serverbound/PlayServerboundPlayerPositionMessage";
 import { PlayServerboundPluginMessage } from "./play/serverbound/PlayServerboundPluginMessage";
 import { PlayServerboundTeleportConfirmMessage } from "./play/serverbound/PlayServerboundTeleportConfirmMessage";
-import { PlayServerboundPlayerPositionAndRotationMessage } from "./play/serverbound/PlayServerboundPlayerPositionAndRotationMessage";
-import { PlayServerboundKeepAliveMessage } from "./play/serverbound/PlayServerboundKeepAliveMessage";
-import { PlayServerboundChatMessage } from "./play/serverbound/PlayServerboundChatMessage";
+import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage";
+import { StatusRequestMessageHandler } from "./status/serverbound/StatusRequestMessage";
+import { ConnectionState } from "../../../server/Connection";
+import Server from "../../../server/Server";
+import { MessageHandler } from "../Message";
 
 export default class MessageHandlerFactory {
   public readonly registered: Set<MessageHandler> = new Set();

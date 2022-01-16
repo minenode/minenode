@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import { MineBuffer } from "../../../../../../native";
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
 import { Chat } from "../../../../../utils/Chat";
-import { MineBuffer } from "../../../../../../native";
 
 export default class LoginDisconnectMessage implements IClientboundMessage {
   public id = 0x00;

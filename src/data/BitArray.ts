@@ -3,10 +3,10 @@ import { MineBuffer } from "../../native";
 // https://github.dev/PrismarineJS/prismarine-chunk/blob/3e617d8e39ed9863c46fe99c296eef82fc9eabaa/src/pc/common/BitArray.js
 // License: MIT
 
-type ReadWriteArrayLike<T> = {
+interface ReadWriteArrayLike<T> {
   [i: number]: T;
   readonly length: number;
-};
+}
 
 export interface BitArrayOptions {
   data?: Uint32Array;
@@ -24,7 +24,7 @@ export class BitArray {
     const data = options.data ?? new Uint32Array(Math.ceil((options.capacity * options.bitsPerValue) / 32));
     const valueMask = (1 << options.bitsPerValue) - 1;
 
-    this.data = data.buffer ? new Uint32Array(data.buffer) : Uint32Array.from(data);
+    this.data = Uint32Array.from(data);
     this.capacity = options.capacity;
     this.bitsPerValue = options.bitsPerValue;
     this.valueMask = valueMask;
@@ -96,7 +96,7 @@ export class BitArray {
   }
 
   public toString(): string {
-    return `BitArray(capacity=${this.capacity}, bitsPerValue=${this.bitsPerValue}, data=${this.data.toString()})`;
+    return `BitArray(capacity=${this.capacity}, bitsPerValue=${this.bitsPerValue}, len=${this.data.length})`;
   }
 
   public toJSON(): BitArrayOptions {
@@ -117,9 +117,9 @@ export class BitArray {
 
   public static fromArray(array: ReadWriteArrayLike<number>, bitsPerValue: number): BitArray {
     const data = [];
-    let i = 0,
-      curLong = 0,
-      curBit = 0;
+    let i = 0;
+      let curLong = 0;
+      let curBit = 0;
     while (i < array.length) {
       curLong |= array[i] << curBit;
       curBit += bitsPerValue;

@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import { inspect } from "util";
+
 export class Assert extends null {
-  private constructor() {
-    // Do nothing
-  }
+  // eslint-disable-next-line constructor-super, @typescript-eslint/no-empty-function
+  private constructor() {}
 
   public static integerBetween(value: unknown, min: number, max: number): asserts value is number {
     if (typeof value !== "number") {
@@ -39,7 +40,7 @@ export class Assert extends null {
   public static bigintBetween(value: unknown, min: bigint, max: bigint): asserts value is bigint {
     // Check if value is a bigint
     if (typeof value !== "bigint") {
-      throw new TypeError(`${value} is not a bigint`);
+      throw new TypeError(`${inspect(value)} is not a bigint`);
     }
     // Check if value is between min and max
     if (value < min) {

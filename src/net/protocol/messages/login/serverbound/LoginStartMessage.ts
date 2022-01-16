@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { MessageHandler } from "../../../../../net/protocol/Message";
-import Server from "../../../../../server/Server";
-import { ConnectionState } from "../../../../../server/Connection";
-import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
-import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
-import { Player } from "../../../../../server/Player";
-import { InventoryHotbarSlot } from "../../../../../utils/Enums";
 import { MineBuffer } from "../../../../../../native/index";
+import { MessageHandler } from "../../../../../net/protocol/Message";
+import { ConnectionState } from "../../../../../server/Connection";
+import { Player } from "../../../../../server/Player";
+import Server from "../../../../../server/Server";
+import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
+import { InventoryHotbarSlot } from "../../../../../utils/Enums";
+import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
 
 export class LoginStartMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -41,6 +41,7 @@ export class LoginStartMessage extends MessageHandler {
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/dot-notation
     player["__baseInitialize"]({
       username,
       hotbarSlot: InventoryHotbarSlot.SLOT_1, // TODO: get from player data

@@ -19,8 +19,8 @@ import path from "path";
 import util from "util";
 
 import szBin from "7zip-bin";
-import sz from "node-7z";
 import chalk from "chalk";
+import sz from "node-7z";
 
 import { getRootDirectory } from "./DeployUtils";
 
@@ -118,23 +118,24 @@ export class FileConsumer extends LogConsumer {
   protected override log(entry: LogEntry): void {
     const formatted = `${entry.timestamp.toISOString()} [${entry.name}/${LogLevel[entry.level]}] ${entry.formatted}`;
 
-    const filename = entry.timestamp.toISOString().split("T")[0] + ".log";
+    const filename = `${entry.timestamp.toISOString().split("T")[0]  }.log`;
     const filepath = path.join(this.directory, filename);
     fs.mkdirSync(this.directory, { recursive: true });
 
     // Remove ANSI escape codes before writing to the file
     // See https://stackoverflow.com/a/29497680
     // eslint-disable-next-line no-control-regex
-    fs.appendFileSync(filepath, formatted.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "") + "\n");
+    fs.appendFileSync(filepath, `${formatted.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "")  }\n`);
 
     this.archiveIfNeeded();
   }
 
-  private static p7zModuleHash: string | null = null;
+  private static readonly p7zModuleHash: string | null = null;
 
   private archiveIfNeeded(): void {
+    // eslint-disable-next-line @typescript-eslint/require-array-sort-compare
     const logFiles = fs.readdirSync(this.directory).sort();
-    const needArchive = logFiles.filter(f => f.endsWith(".log") && f !== new Date().toISOString().split("T")[0] + ".log");
+    const needArchive = logFiles.filter(f => f.endsWith(".log") && f !== `${new Date().toISOString().split("T")[0]  }.log`);
 
     if (!this.#archiveLock && needArchive.length > 0) {
       this.#archiveLock = true;
@@ -189,6 +190,7 @@ export class Logger {
 
   protected log(level: LogLevel, message: string, ...args: unknown[]): void {
     for (const consumer of this.consumers) {
+      // eslint-disable-next-line @typescript-eslint/dot-notation
       consumer["_log"](this.name, level, message, ...args);
     }
   }

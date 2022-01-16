@@ -1,5 +1,5 @@
-import { IClientboundMessage } from "../../../Message";
 import { MineBuffer } from "../../../../../../native/index";
+import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundKeepAliveMessageOptions {
   keepAliveId: bigint;

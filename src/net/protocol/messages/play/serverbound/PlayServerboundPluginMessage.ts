@@ -1,9 +1,9 @@
-import { MessageHandler } from "../../../Message";
-import Server from "../../../../../server/Server";
-import { ConnectionState } from "../../../../../server/Connection";
 import { MineBuffer } from "../../../../../../native/index";
-import { PluginChannel } from "../../../../../utils/Enums";
+import { ConnectionState } from "../../../../../server/Connection";
 import { Player } from "../../../../../server/Player";
+import Server from "../../../../../server/Server";
+import { PluginChannel } from "../../../../../utils/Enums";
+import { MessageHandler } from "../../../Message";
 
 export class PlayServerboundPluginMessage extends MessageHandler {
   public constructor(server: Server) {

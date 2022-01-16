@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { Chat } from "../../../../../utils/Chat";
 import { MineBuffer } from "../../../../../../native/index";
 import { IClientboundMessage } from "../../../../../net/protocol/Message";
+import { Chat } from "../../../../../utils/Chat";
 
 export interface StatusResponse {
   version: {

@@ -1,6 +1,6 @@
+import { MineBuffer } from "../../../../../../native/index";
 import { Chat } from "../../../../../utils/Chat";
 import { IClientboundMessage } from "../../../Message";
-import { MineBuffer } from "../../../../../../native/index";
 
 export interface PlayClientboundDisconnectMessageOptions {
   reason: Chat;

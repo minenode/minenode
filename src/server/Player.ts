@@ -16,24 +16,23 @@
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
-import Connection from "./Connection";
-import Server from "./Server";
-import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChannel } from "../utils/Enums";
-import { PlayClientboundHeldItemChangeMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundHeldItemChangeMessage";
-import { Chat } from "../utils/Chat";
-import { IClientboundMessage } from "../net/protocol/Message";
-import { Vec3, Vec5 } from "../utils/Geometry";
+import Connection, { ConnectionState } from "./Connection";
 import { Entity } from "./Entity";
-import { ConnectionState } from "./Connection";
+import Server from "./Server";
+import { MineBuffer } from "../../native";
+import { destroy } from "../core/Base";
+import { int, float, double } from "../data/NBT";
+import { IClientboundMessage } from "../net/protocol/Message";
+import { PlayClientboundEntityStatusMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundEntityStatusMessage";
+import { PlayClientboundHeldItemChangeMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundHeldItemChangeMessage";
+import { PlayClientboundJoinGameMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundJoinGameMessage";
 import { PlayClientboundKeepAliveMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundKeepAlive";
 import { PlayClientboundPluginMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundPluginMessage";
-import { MineBuffer } from "../../native";
-import { PlayClientboundServerDifficultyMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundServerDifficultyMessage";
-import { PlayClientboundEntityStatusMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundEntityStatusMessage";
 import { PlayClientboundPositionAndLookMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundPositionAndLookMessage";
-import { int, float, double } from "../data/NBT";
-import { PlayClientboundJoinGameMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundJoinGameMessage";
-import { destroy } from "../core/Base";
+import { PlayClientboundServerDifficultyMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundServerDifficultyMessage";
+import { Chat } from "../utils/Chat";
+import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChannel } from "../utils/Enums";
+import { Vec3, Vec5 } from "../utils/Geometry";
 
 export interface PlayerInitializeOptions {
   username: string;
@@ -65,6 +64,7 @@ export class Player extends Entity<PlayerInitializeOptions> {
   }
 
   public get username(): string {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return this._assertInitialized("username") && this.#username!;
   }
 
@@ -105,6 +105,7 @@ export class Player extends Entity<PlayerInitializeOptions> {
   }
 
   public get hotbarSlot(): InventoryHotbarSlot {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return this._assertInitialized("hotbarSlot") && this.#hotbarSlot!;
   }
 
@@ -112,6 +113,7 @@ export class Player extends Entity<PlayerInitializeOptions> {
     if (state < this.connection.state) {
       throw new Error("Cannot go back in state");
     }
+    // eslint-disable-next-line @typescript-eslint/dot-notation
     this.connection["state"] = state;
     switch (state) {
       case ConnectionState.LOGIN: {
@@ -250,6 +252,8 @@ export class Player extends Entity<PlayerInitializeOptions> {
         );
         break;
       }
+      case ConnectionState.HANDSHAKE: { throw new Error('Not implemented yet: ConnectionState.HANDSHAKE case') }
+      case ConnectionState.STATUS: { throw new Error('Not implemented yet: ConnectionState.STATUS case') }
     }
   }
 

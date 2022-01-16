@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import Server from "../../server/Server";
-import { Player } from "../../server/Player";
 import { MineBuffer } from "../../../native/index";
 import { ConnectionState } from "../../server/Connection";
+import { Player } from "../../server/Player";
+import Server from "../../server/Server";
 
 export interface MessageHandlerOptions {
   state: ConnectionState;
@@ -44,5 +44,5 @@ export abstract class MessageHandler {
 
 export interface IClientboundMessage {
   id: number;
-  encode(buffer: MineBuffer): void;
+  encode: (buffer: MineBuffer) => void;
 }

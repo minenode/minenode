@@ -14,22 +14,21 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { EventEmitter } from "eventemitter3";
-import net from "net";
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
+import fs from "fs";
+import net from "net";
+import path from "path";
 import util from "util";
+import { EventEmitter } from "eventemitter3";
 
 import Connection, { ConnectionState } from "./Connection";
-import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
-import { getRootDirectory } from "../utils/DeployUtils";
-import { Logger, LogLevel } from "../utils/Logger";
-import { StdoutConsumer, FileConsumer } from "../utils/Logger";
-import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
 import { Player } from "./Player";
-import { Performance } from "../utils/Performance";
 import { destroy } from "../core/Base";
+import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
+import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
+import { getRootDirectory } from "../utils/DeployUtils";
+import { Logger, LogLevel, StdoutConsumer, FileConsumer } from "../utils/Logger";
+import { Performance } from "../utils/Performance";
 
 export interface ServerOptions {
   compressionThreshold: number;
@@ -89,10 +88,10 @@ export default class Server extends EventEmitter<{
     if (fs.existsSync(serverIconPath) && fs.statSync(serverIconPath).isFile()) {
       if (fs.statSync(serverIconPath).size > (65535 * 3) / 4) {
         this.logger.error(`${serverIconPath} is too large. Cannot exceed ${(65535 * 3) / 4} bytes.`);
-        return;
+        
       } else {
         const raw = fs.readFileSync(serverIconPath);
-        this.encodedFavicon = "data:image/png;base64," + raw.toString("base64");
+        this.encodedFavicon = `data:image/png;base64,${  raw.toString("base64")}`;
         this.logger.info(`loaded favicon from ${serverIconPath} (${raw.length} bytes -> ${this.encodedFavicon.length} encoded)`);
       }
     } else {
@@ -123,6 +122,7 @@ export default class Server extends EventEmitter<{
     this.tickCount++;
     this.emit("tick", this.tickCount);
     for (const player of this.players) {
+      // eslint-disable-next-line @typescript-eslint/dot-notation
       player["_tick"](this.tickCount);
     }
 

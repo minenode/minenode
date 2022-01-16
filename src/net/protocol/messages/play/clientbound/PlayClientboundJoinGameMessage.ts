@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { IClientboundMessage } from "../../../../../net/protocol/Message";
 import { MineBuffer } from "../../../../../../native/index";
-import { GameMode } from "../../../../../utils/Enums";
 import { Encodable, encodeNBT } from "../../../../../data/NBT";
+import { IClientboundMessage } from "../../../../../net/protocol/Message";
+import { GameMode } from "../../../../../utils/Enums";
 
 export interface PlayClientboundJoinGameMessageOptions {
   entityId: number;

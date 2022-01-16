@@ -1,19 +1,19 @@
 {
-  "root": true,
-  "parser": "@typescript-eslint/parser",
-  "plugins": ["@typescript-eslint"],
-  "extends": ["eslint:recommended", "plugin:@typescript-eslint/eslint-recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
-  "rules": {
-    "no-console": "warn",
-    "@typescript-eslint/no-floating-promises": "error",
-    "require-await": "error",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-non-null-assertion": "warn",
-    "@typescript-eslint/explicit-function-return-type": "warn",
-    "@typescript-eslint/explicit-member-accessibility": "warn",
-    "@typescript-eslint/explicit-module-boundary-types": "warn"
-  },
+  "extends": "marine/prettier/node",
+  "plugins": ["import"],
   "parserOptions": {
     "project": "tsconfig.eslint.json"
+  },
+  "rules": {
+    "import/order": [
+      "error",
+      {
+        "groups": ["builtin", "external", "internal", "sibling", "parent"],
+        "alphabetize": {
+          "order": "asc"
+        }
+      }
+    ],
+    "no-console": "error"
   }
 }

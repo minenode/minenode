@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { Assert } from "../utils/Logic";
-import { MineBuffer } from "../../native";
 import * as zlib from "zlib";
+import { MineBuffer } from "../../native";
+import { Assert } from "../utils/Logic";
 
 export enum NBTTagType {
   End = 0,
@@ -152,9 +152,9 @@ function isArrayOf<T>(array: unknown, ctor: Constructor<T> | string | ((item: un
   } else if (typeof ctor === "function") {
     if (isConstructor(ctor)) {
       return array.every(item => item instanceof ctor);
-    } else {
+    } 
       return array.every(ctor);
-    }
+    
   }
   return Array.isArray(array) && array.every(item => (typeof ctor === "string" ? typeof item === ctor : item instanceof ctor));
 }
@@ -205,6 +205,7 @@ export function getType<T extends Encodable>(value: T): NBTTagType {
     return NBTTagType.LongArray;
   } else if (
     typeof value === "object" &&
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     value !== null &&
     Object.getPrototypeOf(value) === Object.prototype &&
     Object.values(value as object).every(isEncodable)
@@ -260,7 +261,8 @@ export class Encoder {
     }
     if (((options.name ?? true) && tag.name) || typeof options.name === "string") {
       const name = tag.name ?? (typeof options.name === "string" ? options.name : "");
-      this.buffer.writeShort(name?.length ?? 0);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      this.buffer.writeShort(name.length ?? 0);
       if (name) {
         this.buffer.writeBytes(Buffer.from(name, "utf8"));
       }
@@ -399,7 +401,7 @@ export class Decoder {
       }
       case NBTTagType.Compound: {
         const compound: Record<string, Encodable> = {};
-        // eslint-disable-next-line no-constant-condition
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
           const tag = this.decodeTag({ name: true });
           if (tag.type === NBTTagType.End) {

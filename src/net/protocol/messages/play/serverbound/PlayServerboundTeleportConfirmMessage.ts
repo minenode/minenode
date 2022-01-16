@@ -1,8 +1,8 @@
-import { MessageHandler } from "../../../Message";
-import Server from "../../../../../server/Server";
-import { ConnectionState } from "../../../../../server/Connection";
 import { MineBuffer } from "../../../../../../native/index";
+import { ConnectionState } from "../../../../../server/Connection";
 import { Player } from "../../../../../server/Player";
+import Server from "../../../../../server/Server";
+import { MessageHandler } from "../../../Message";
 
 export class PlayServerboundTeleportConfirmMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -18,6 +18,7 @@ export class PlayServerboundTeleportConfirmMessage extends MessageHandler {
     const teleportId = buffer.readVarInt();
 
     // TODO: handle
+    // eslint-disable-next-line no-sequences
     void teleportId, player;
   }
 }

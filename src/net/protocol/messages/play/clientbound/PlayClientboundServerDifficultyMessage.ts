@@ -15,8 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { MineBuffer } from "../../../../../../native/index";
-import { IClientboundMessage } from "../../../Message";
 import { Difficulty } from "../../../../../utils/Enums";
+import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundServerDifficultyMessageOptions {
   difficulty: Difficulty;

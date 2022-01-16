@@ -35,7 +35,9 @@ export class Chunk {
       bitsPerValue: 1,
       capacity: this.numSections,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.sections = Array(this.numSections).fill(null);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.biomes = Array(4 * 4 * (this.worldHeight >> 2)).fill(0);
 
     this.skyLightMask = new BitArray({

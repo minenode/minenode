@@ -41,16 +41,16 @@ export default class EncryptionState {
   public updateCipher(data: Buffer): Buffer {
     if (this.cipher) {
       return this.cipher.update(data);
-    } else {
+    } 
       throw new Error("EncryptionState.update called before cipher was initiailized");
-    }
+    
   }
 
   public updateDecipher(data: Buffer): Buffer {
     if (this.decipher) {
       return this.decipher.update(data);
-    } else {
+    } 
       throw new Error("EncryptionState.update called before cipher was initiailized");
-    }
+    
   }
 }
