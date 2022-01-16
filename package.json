@@ -40,10 +40,10 @@
   "scripts": {
     "prestart": "run-p build:rs:debug",
     "start": "node -r @swc-node/register ./src/app.ts",
-    "debug": "cross-env MINENODE_DEBUG=1 RUST_BACKTRACE=1 nodemon -w ./src -w ./rust --exec 'yarn start' --ext ts,rs",
+    "debug": "cross-env MINENODE_DEBUG=1 RUST_BACKTRACE=1 nodemon -w ./src -w ./crate --exec 'yarn start' --ext ts,rs",
     "build:ts": "tsc",
-    "build:rs:debug": "napi build --js false native",
-    "build:rs:release": "napi build --js false --release native",
+    "build:rs:debug": "napi build --cargo-cwd crate --js false native",
+    "build:rs:release": "napi build --cargo-cwd crate --js false --release native",
     "build:debug": "run-p build:ts build:rs:debug",
     "build:release": "run-p build:ts build:rs:release",
     "lint": "eslint --ext ts src test",
@@ -51,7 +51,7 @@
     "pretest": "run-s build:rs:debug",
     "test:ts": "tsc --noEmit",
     "test:jest": "jest",
-    "test:rs": "cargo test",
+    "test:rs": "cargo test --manifest-path crate/Cargo.toml",
     "test": "run-p test:ts test:jest test:rs"
   },
   "pre-commit": {

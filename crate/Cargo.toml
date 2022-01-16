@@ -8,7 +8,6 @@ publish = false
 
 [lib]
 crate-type = ["cdylib"]
-path = "rust/lib.rs"
 
 [dependencies]
 futures = "0.3"
