@@ -29,6 +29,7 @@ import { PlayServerboundPluginMessage } from "./play/serverbound/PlayServerbound
 import { PlayServerboundTeleportConfirmMessage } from "./play/serverbound/PlayServerboundTeleportConfirmMessage";
 import { PlayServerboundPlayerPositionAndRotationMessage } from "./play/serverbound/PlayServerboundPlayerPositionAndRotationMessage";
 import { PlayServerboundKeepAliveMessage } from "./play/serverbound/PlayServerboundKeepAliveMessage";
+import { PlayServerboundChatMessage } from "./play/serverbound/PlayServerboundChatMessage";
 
 export default class MessageHandlerFactory {
   public readonly registered: Set<MessageHandler> = new Set();
@@ -45,7 +46,8 @@ export default class MessageHandlerFactory {
       .add(new PlayServerboundPluginMessage(this.server))
       .add(new PlayServerboundTeleportConfirmMessage(this.server))
       .add(new PlayServerboundPlayerPositionAndRotationMessage(this.server))
-      .add(new PlayServerboundKeepAliveMessage(this.server));
+      .add(new PlayServerboundKeepAliveMessage(this.server))
+      .add(new PlayServerboundChatMessage(this.server));
   }
 
   public getHandler(id: number, state: ConnectionState): MessageHandler | null {
