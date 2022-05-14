@@ -36,10 +36,8 @@ export function filter<T>(set: Iterable<T>, fn: (t: T) => boolean): T[] {
 }
 
 export function* filterMapped<T, U>(set: Iterable<T>, filter: (t: T) => boolean, map: (t: T) => U): Iterable<U> {
-  for (const t of set) {
-    if (filter(t)) {
-      yield map(t);
-    }
+  for (const t of filtered(set, filter)) {
+    yield map(t);
   }
 }
 
@@ -49,10 +47,9 @@ export function filterMap<T, U>(set: Iterable<T>, filter: (t: T) => boolean, map
 
 export function filterCount<T>(set: Iterable<T>, fn: (t: T) => boolean): number {
   let count = 0;
-  for (const t of set) {
-    if (fn(t)) {
-      count++;
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  for (const _ of filtered(set, fn)) {
+    count++;
   }
   return count;
 }
