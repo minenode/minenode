@@ -15,13 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Connection, { ConnectionState } from "./Connection";
+import { Dimension } from "./Dimension";
 import { Entity } from "./Entity";
-import Server from "./Server";
-import { MineBuffer } from "../../native";
-import { destroy } from "../core/Base";
+import { MineBuffer, Vec3, Vec5 } from "../../native";
 import { int, float, double } from "../data/NBT";
-import { IClientboundMessage } from "../net/protocol/Message";
 import { PlayClientboundChatMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundChatMessage";
 import { PlayClientboundEntityStatusMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundEntityStatusMessage";
 import { PlayClientboundHeldItemChangeMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundHeldItemChangeMessage";
@@ -30,108 +27,150 @@ import { PlayClientboundKeepAliveMessage } from "../net/protocol/messages/play/c
 import { PlayClientboundPluginMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundPluginMessage";
 import { PlayClientboundPositionAndLookMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundPositionAndLookMessage";
 import { PlayClientboundServerDifficultyMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundServerDifficultyMessage";
+import Connection, { ConnectionState } from "../server/Connection";
 import { Chat } from "../utils/Chat";
 import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChannel, ClientChatPosition } from "../utils/Enums";
-import { Vec3, Vec5 } from "../utils/Geometry";
 
-export interface PlayerInitializeOptions {
+export interface PlayerOptions {
   username: string;
   hotbarSlot: InventoryHotbarSlot;
 }
 
-export class Player extends Entity<PlayerInitializeOptions> {
-  public connection: Connection;
-  public server: Server;
+export class Player extends Entity {
+  public readonly connection: Connection;
 
-  #initialized = false;
-  #username: string | null = null;
+  public constructor(dimension: Dimension, entityId: number, connection: Connection, options: PlayerOptions) {
+    super(dimension, entityId);
+    this.connection = connection;
 
-  public position = Vec5.zero();
-  public onGround = false;
-  public lastPositionOnGround: Vec3 | null = null;
-  public lastTickOnGround: number | null = null;
-
-  public lastKeepAliveTick: number | null = null;
-
-  #hotbarSlot: InventoryHotbarSlot | null = null;
-
-  protected override _initialize(options: PlayerInitializeOptions): void {
-    if (this.#initialized) {
-      throw new Error("Player already initialized");
-    }
-    this.#username = options.username;
+    this.username = options.username;
     this.hotbarSlot = options.hotbarSlot;
   }
 
+  private _username: string | null = null;
+
   public get username(): string {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    return this._assertInitialized("username") && this.#username!;
+    if (this._username === null) throw new Error("Player.username is not set");
+    return this._username;
   }
 
-  public constructor(server: Server, connection: Connection) {
-    super(server);
-    this.connection = connection;
-    this.server = server;
+  public set username(username: string) {
+    if (!/^[a-zA-Z0-9_]{2,16}$/.test(username)) throw new Error(`Invalid username ${username}`);
+    this._username = username;
   }
 
-  protected override _destroy(): void {
-    destroy(this.connection);
-  }
+  private _hotbarSlot: InventoryHotbarSlot = InventoryHotbarSlot.SLOT_1;
 
-  public disconnect(reason: Chat = "Disconnected"): void {
-    this.connection.disconnect(reason);
-  }
-
-  public sendPacket(message: IClientboundMessage): void {
-    this.connection.writeMessage(message);
+  public get hotbarSlot(): InventoryHotbarSlot {
+    return this._hotbarSlot;
   }
 
   public set hotbarSlot(slot: InventoryHotbarSlot) {
+    void this.setHotbarSlotAsync(slot);
+  }
+
+  public async setHotbarSlotAsync(slot: InventoryHotbarSlot): Promise<void> {
     if (this.connection.state !== ConnectionState.PLAY) {
-      this.server.logger.debug(`Player.hotbarSlot can only be set in PLAY state, but is set to ${slot}`);
-      this.connection.once("stateChange", () => {
-        if (this.connection.state === ConnectionState.PLAY) {
-          this.hotbarSlot = slot;
-        }
-      });
+      this.server.logger.warn(`Player.setHotbarSlot can only be called in PLAY state, but is called in ${ConnectionState[this.connection.state]}`);
       return;
     }
-    this.connection.writeMessage(
+    await this.connection.writeMessage(
       new PlayClientboundHeldItemChangeMessage({
         slot,
       }),
     );
-    this.#hotbarSlot = slot;
+    this._hotbarSlot = slot;
   }
 
-  public get hotbarSlot(): InventoryHotbarSlot {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    return this._assertInitialized("hotbarSlot") && this.#hotbarSlot!;
+  private _position: Vec5 = Vec5.zero();
+
+  public get position(): Vec5 {
+    return this._position;
   }
 
-  public sendChat(chat: Chat, position: ClientChatPosition = ClientChatPosition.CHAT_BOX, sender: string | null = null): void {
-    if (this.connection.state === ConnectionState.PLAY) {
-      this.sendPacket(
-        new PlayClientboundChatMessage({
-          chat,
-          position,
-          sender,
-        }),
-      );
-    } else {
-      this.server.logger.debug(`Player.sendChat can only be called in PLAY state, but is called in ${this.connection.state}`);
-      this.connection.once("stateChange", () => {
-        if (this.connection.state === ConnectionState.PLAY) {
-          this.sendChat(chat, position, sender);
-        }
-      });
+  public set position(position: Vec5) {
+    this._position = position;
+  }
+
+  private _lastPositionOnGround: Vec3 | null = null;
+  private _isOnGround = false;
+  private _lastTickOnGround = -1;
+  private _lastKeepAliveTick = -1;
+
+  public get maxDistancePerTick(): number {
+    return 1.4 / 20;
+  }
+
+  public async setPositionChecked(position: Vec5, onGround: boolean): Promise<void> {
+    // const distance = this._position.distance(position);
+    // if (distance > this.maxDistancePerTick)
+    //   throw new Error(`Player.setPositionChecked can only be called with a distance of ${this.maxDistancePerTick}, but is called with ${distance}`);
+    await this.setPositionUnchecked(position, onGround);
+  }
+
+  public async setPositionUnchecked(position: Vec5, onGround: boolean): Promise<void> {
+    if (this.connection.state !== ConnectionState.PLAY)
+      throw new Error(`Player.setPositionUnchecked can only be called in PLAY state, but is called in ${ConnectionState[this.connection.state]}`);
+    this._position = position;
+    this._isOnGround = onGround;
+    this._lastPositionOnGround = onGround ? position : null;
+    await Promise.resolve();
+  }
+
+  public async disconnect(reason: Chat = "Disconnected"): Promise<void> {
+    await this.connection.disconnect(reason);
+  }
+
+  public override async init(): Promise<void> {
+    // This is called when the player is created, after the constructor
+    // TODO
+  }
+
+  public override async tick(tick: number): Promise<void> {
+    if (this._lastKeepAliveTick === -1) {
+      this._lastKeepAliveTick = tick;
+    } else if (tick - this._lastKeepAliveTick > 20 * 30) {
+      await this.disconnect("KeepAlive timeout");
+    } else if (tick - this._lastKeepAliveTick > 20 * Math.floor(Math.random() * 20)) {
+      await this.connection.writeMessage(new PlayClientboundKeepAliveMessage({ keepAliveId: BigInt(tick) }));
+      this._lastKeepAliveTick = tick;
     }
+    if (this.connection.state === ConnectionState.PLAY) {
+      if (this._lastTickOnGround === -1) {
+        this._lastTickOnGround = tick;
+      }
+      if (this._isOnGround) {
+        this._lastTickOnGround = tick;
+        this._lastPositionOnGround = this._position.toVec3();
+      }
+      if (tick - this._lastTickOnGround > 20 * 10) {
+        // await this.disconnect("Player is not on ground");
+      }
+    }
+  }
+
+  public override end(): void {
+    this.connection.destroy();
+  }
+
+  public getHotbarSlot(): InventoryHotbarSlot {
+    return this.hotbarSlot;
+  }
+
+  public async sendChat(chat: Chat, position: ClientChatPosition = ClientChatPosition.CHAT_BOX, sender: string | null = null): Promise<void> {
+    if (this.connection.state !== ConnectionState.PLAY)
+      throw new Error(`Player.sendChat can only be called in PLAY state, but is called in ${ConnectionState[this.connection.state]}`);
+    await this.connection.writeMessage(
+      new PlayClientboundChatMessage({
+        chat,
+        position,
+        sender,
+      }),
+    );
   }
 
   public async setState(state: ConnectionState): Promise<void> {
-    if (state < this.connection.state) {
-      throw new Error("Cannot go back in state");
-    }
+    if (state < this.connection.state) throw new Error("Cannot go back in state");
     // eslint-disable-next-line @typescript-eslint/dot-notation
     this.connection["state"] = state;
     switch (state) {
@@ -140,11 +179,11 @@ export class Player extends Entity<PlayerInitializeOptions> {
       }
       case ConnectionState.PLAY: {
         this.server.emit("playerJoin", this);
-        await this.nextTick();
+        await this.server.nextTick();
         const joinGameResponse = new PlayClientboundJoinGameMessage({
-          entityId: 1,
+          entityId: this.entityId,
           isHardcore: false,
-          gamemode: GameMode.SURVIVAL,
+          gamemode: GameMode.CREATIVE,
           previousGameMode: GameMode.NONE,
           worlds: ["minecraft:overworld"],
           dimensionCodec: {
@@ -152,25 +191,25 @@ export class Player extends Entity<PlayerInitializeOptions> {
               type: "minecraft:dimension_type",
               value: [
                 {
-                  name: "minecraft:overworld",
-                  id: int(0),
                   element: {
-                    piglin_safe: false,
-                    natural: true,
                     ambient_light: float(0.0),
-                    infiniburn: "minecraft:infiniburn_overworld",
-                    respawn_anchor_works: false,
-                    has_skylight: true,
                     bed_works: true,
-                    effects: "minecraft:overworld",
-                    has_raids: true,
-                    min_y: int(0),
-                    height: int(256),
-                    logical_height: int(256),
                     coordinate_scale: double(1.0),
-                    ultrawarm: false,
+                    effects: "minecraft:overworld",
                     has_ceiling: false,
+                    has_raids: true,
+                    has_skylight: true,
+                    height: int(384),
+                    infiniburn: "#minecraft:infiniburn_overworld",
+                    logical_height: int(384),
+                    min_y: int(-64),
+                    natural: true,
+                    piglin_safe: false,
+                    respawn_anchor_works: false,
+                    ultrawarm: false,
                   },
+                  id: int(0),
+                  name: "minecraft:overworld",
                 },
               ],
             },
@@ -178,10 +217,9 @@ export class Player extends Entity<PlayerInitializeOptions> {
               type: "minecraft:worldgen/biome",
               value: [
                 {
-                  name: "minecraft:plains",
-                  id: int(1),
                   element: {
-                    precipitation: "rain",
+                    category: "plains",
+                    downfall: float(0.4),
                     effects: {
                       sky_color: int(7907327),
                       water_fog_color: int(329011),
@@ -195,11 +233,12 @@ export class Player extends Entity<PlayerInitializeOptions> {
                       },
                     },
                     depth: float(0.125),
+                    precipitation: "rain",
                     temperature: float(0.8),
                     scale: float(0.05),
-                    downfall: float(0.4),
-                    category: "plains",
                   },
+                  id: int(1),
+                  name: "minecraft:plains",
                 },
               ],
             },
@@ -208,7 +247,7 @@ export class Player extends Entity<PlayerInitializeOptions> {
             piglin_safe: false, // TODO: implicitly convert boolean to byte
             natural: true,
             ambient_light: float(0.0),
-            infiniburn: "minecraft:infiniburn_overworld",
+            infiniburn: "#minecraft:infiniburn_overworld",
             respawn_anchor_works: false,
             has_skylight: true,
             bed_works: true,
@@ -231,31 +270,31 @@ export class Player extends Entity<PlayerInitializeOptions> {
           isDebug: false,
           isFlat: false,
         });
-        this.sendPacket(joinGameResponse);
-        this.sendPacket(
+        await this.connection.writeMessage(joinGameResponse);
+        await this.connection.writeMessage(
           new PlayClientboundPluginMessage({
             channel: PluginChannel.MINECRAFT_BRAND,
             // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
             data: (() => {
               const b = new MineBuffer();
-              b.writeString(this.server.brand);
+              b.writeString(this.dimension.world.server.brand);
               return b;
             })(),
           }),
         );
-        this.sendPacket(
+        await this.connection.writeMessage(
           new PlayClientboundServerDifficultyMessage({
             difficulty: Difficulty.NORMAL,
             difficultyLocked: false,
           }),
         );
-        this.sendPacket(
+        await this.connection.writeMessage(
           new PlayClientboundEntityStatusMessage({
-            entityId: this.id,
+            entityId: this.entityId,
             status: AllEntityStatus.PLAYER__SET_OP_PERMISSION_4, // TODO: read from config, validate, etc.
           }),
         );
-        this.sendPacket(
+        await this.connection.writeMessage(
           new PlayClientboundPositionAndLookMessage({
             position: new Vec5(0, 1, 0, 0, 0),
             flags: {
@@ -269,6 +308,15 @@ export class Player extends Entity<PlayerInitializeOptions> {
             dismountVehicle: false,
           }),
         );
+
+        await this.server.broadcastChat(
+          {
+            color: "yellow",
+            text: `${this.username} joined the game`,
+          },
+          ClientChatPosition.SYSTEM_MESSAGE,
+        );
+
         break;
       }
       case ConnectionState.HANDSHAKE: {
@@ -276,21 +324,6 @@ export class Player extends Entity<PlayerInitializeOptions> {
       }
       case ConnectionState.STATUS: {
         break;
-      }
-    }
-  }
-
-  protected override _tick(tick: number): void {
-    if (this.connection.state === ConnectionState.PLAY) {
-      // Process keep alive
-      if (this.lastKeepAliveTick === null) {
-        this.lastKeepAliveTick = tick;
-      } else if (tick - this.lastKeepAliveTick > 20 * 30) {
-        this.disconnect("KeepAlive timeout");
-      } else if (tick - this.lastKeepAliveTick > 20 * Math.floor(Math.random() * 20)) {
-        // this.server.logger.debug(`Sending keepalive to ${this.username}`);
-        this.sendPacket(new PlayClientboundKeepAliveMessage({ keepAliveId: BigInt(tick) }));
-        this.lastKeepAliveTick = tick;
       }
     }
   }

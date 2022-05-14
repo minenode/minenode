@@ -15,12 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MineBuffer } from "../../../../../../native/index";
+import { MineBuffer, Vec5 } from "../../../../../../native/index";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import { ConnectionState } from "../../../../../server/Connection";
-import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
-import { Vec3 } from "../../../../../utils/Geometry";
+import { Player } from "../../../../../world/Player";
 
 export class PlayServerboundPlayerPositionMessage extends MessageHandler {
   public constructor(server: Server) {
@@ -32,44 +31,46 @@ export class PlayServerboundPlayerPositionMessage extends MessageHandler {
     });
   }
 
-  public handle(buffer: MineBuffer, player: Player): void {
+  public async handle(buffer: MineBuffer, player: Player): Promise<void> {
     const x = buffer.readDouble();
     const y = buffer.readDouble();
     const z = buffer.readDouble();
     const onGround = buffer.readBoolean();
 
-    const newPos = new Vec3(x, y, z);
+    const newPos5 = new Vec5(x, y, z, player.position.yaw, player.position.pitch);
 
-    const distance = newPos.distance(player.position.toVec3());
+    await player.setPositionChecked(newPos5, onGround);
 
-    if (distance > 10) {
-      // player.disconnect(`Player moved too far (distance = ${distance})`);
-      // return;
-    }
+    // const distance = newPos.distance(player.position.toVec3());
 
-    if (onGround) {
-      player.onGround = true;
-      player.lastPositionOnGround = newPos;
-      player.lastTickOnGround = this.server.tickCount;
-    } else if (player.lastPositionOnGround && player.lastTickOnGround) {
-      player.onGround = false;
-      // const distanceFloating = newPos.distance(player.lastPositionOnGround);
-      // TODO: anti-cheat etc.
-      const timeFloating = this.server.tickCount - player.lastTickOnGround;
-      if (timeFloating > 20 * 10) {
-        // player.disconnect("Flying is not enabled on this server.");
-        // return;
-      }
-    } else {
-      player.onGround = false;
-      player.lastPositionOnGround = newPos; // We don't know where we are, so assume we're on the ground
-      player.lastTickOnGround = this.server.tickCount;
-    }
+    // if (distance > 10) {
+    //   // player.disconnect(`Player moved too far (distance = ${distance})`);
+    //   // return;
+    // }
 
-    player.position.x = x;
-    player.position.y = y;
-    player.position.z = z;
+    // if (onGround) {
+    //   player.onGround = true;
+    //   player.lastPositionOnGround = newPos;
+    //   player.lastTickOnGround = this.server.tickCount;
+    // } else if (player.lastPositionOnGround && player.lastTickOnGround) {
+    //   player.onGround = false;
+    //   // const distanceFloating = newPos.distance(player.lastPositionOnGround);
+    //   // TODO: anti-cheat etc.
+    //   const timeFloating = this.server.tickCount - player.lastTickOnGround;
+    //   if (timeFloating > 20 * 10) {
+    //     // player.disconnect("Flying is not enabled on this server.");
+    //     // return;
+    //   }
+    // } else {
+    //   player.onGround = false;
+    //   player.lastPositionOnGround = newPos; // We don't know where we are, so assume we're on the ground
+    //   player.lastTickOnGround = this.server.tickCount;
+    // }
 
-    // this.server.logger.debug(`${player.connection.remote}: player position (x = ${x}, y = ${y}, z = ${z}, onGround = ${onGround})`);
+    // player.position.x = x;
+    // player.position.y = y;
+    // player.position.z = z;
+
+    // // this.server.logger.debug(`${player.connection.remote}: player position (x = ${x}, y = ${y}, z = ${z}, onGround = ${onGround})`);
   }
 }

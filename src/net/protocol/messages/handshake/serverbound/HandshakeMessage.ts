@@ -18,8 +18,8 @@
 import { MineBuffer } from "../../../../../../native";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import { ConnectionState } from "../../../../../server/Connection";
-import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
+import { Player } from "../../../../../world/Player";
 
 export class HandshakeMessageHandler extends MessageHandler {
   public constructor(server: Server) {

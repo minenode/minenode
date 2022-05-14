@@ -18,10 +18,10 @@
 import { MineBuffer } from "../../../../../../native/index";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import { ConnectionState } from "../../../../../server/Connection";
-import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
 import { InventoryHotbarSlot } from "../../../../../utils/Enums";
+import { Player } from "../../../../../world/Player";
 import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
 
 export class LoginStartMessage extends MessageHandler {
@@ -34,19 +34,17 @@ export class LoginStartMessage extends MessageHandler {
     });
   }
 
-  public handle(buffer: MineBuffer, player: Player): void {
+  public async handle(buffer: MineBuffer, player: Player): Promise<void> {
     const username = buffer.readString();
 
     if (!/^[a-zA-Z0-9_]{2,16}$/.test(username)) {
-      player.disconnect("Invalid username");
+      await player.disconnect("Invalid username");
       return;
     }
 
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    player["__baseInitialize"]({
-      username,
-      hotbarSlot: InventoryHotbarSlot.SLOT_1, // TODO: get from player data
-    });
+    player.username = username;
+    player.hotbarSlot = InventoryHotbarSlot.SLOT_1;
 
     this.server.logger.info(`${player.connection.remote}: Login start for username '${username}'`);
 
@@ -67,6 +65,6 @@ export class LoginStartMessage extends MessageHandler {
       verifyToken: player.connection.encryption.verifyToken,
     });
 
-    player.sendPacket(response);
+    await player.connection.writeMessage(response);
   }
 }

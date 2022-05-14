@@ -15,6 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const MINENODE_VERSION = "0.0.0";
-export const PROTOCOL_VERSION = 758;
-export const GAME_VERSION = "1.18.2";
+export interface WithUniqueId {
+  readonly uuid: string;
+}

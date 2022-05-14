@@ -15,29 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MineBuffer } from "../../../../../../native/index";
-import { MessageHandler } from "../../../../../net/protocol/Message";
+import { MineBuffer } from "../../../../../../native";
 import { ConnectionState } from "../../../../../server/Connection";
 import Server from "../../../../../server/Server";
+import { Vec5 } from "../../../../../utils/Geometry";
 import { Player } from "../../../../../world/Player";
-import StatusPongMessage from "../clientbound/StatusPongMessage";
+import { MessageHandler } from "../../../Message";
 
-export class StatusPingMessageHandler extends MessageHandler {
+export class PlayServerboundPlayerRotationMessage extends MessageHandler {
   public constructor(server: Server) {
     super({
-      state: ConnectionState.STATUS,
-      id: 0x01,
-      label: "status request",
-      server: server,
+      state: ConnectionState.PLAY,
+      id: 0x13,
+      label: "player rotation",
+      server,
     });
   }
 
   public async handle(buffer: MineBuffer, player: Player): Promise<void> {
-    const payload = buffer.readLong();
+    const yaw = buffer.readFloat();
+    const pitch = buffer.readFloat();
+    const onGround = buffer.readBoolean();
 
-    const response = new StatusPongMessage(payload);
-    await player.connection.writeMessage(response);
+    const newPos = new Vec5(player.position.x, player.position.y, player.position.z, yaw, pitch);
 
-    this.server.logger.debug(`${player.connection.remote}: status ping (payload = ${payload})`);
+    await player.setPositionChecked(newPos, onGround);
   }
 }

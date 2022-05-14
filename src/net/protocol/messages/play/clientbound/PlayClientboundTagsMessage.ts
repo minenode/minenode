@@ -16,7 +16,7 @@
  */
 
 import { MineBuffer } from "../../../../../../native/index";
-import { Tag, TagType, TagIdentifier } from "../../../../../utils/Tags";
+import { Tag, TagType, TagIdentifier } from "../../../../../data/Tags";
 import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundTagsMessageOptions {

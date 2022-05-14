@@ -20,9 +20,11 @@ import { LoginEncryptionResponseMessage } from "./login/serverbound/LoginEncrypt
 import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
 import { PlayServerboundChatMessage } from "./play/serverbound/PlayServerboundChatMessage";
 import { PlayServerboundClientSettingsMessage } from "./play/serverbound/PlayServerboundClientSettingsMessage";
+import { PlayServerboundHeldItemChangeMessage } from "./play/serverbound/PlayServerboundHeldItemChangeMessage";
 import { PlayServerboundKeepAliveMessage } from "./play/serverbound/PlayServerboundKeepAliveMessage";
 import { PlayServerboundPlayerPositionAndRotationMessage } from "./play/serverbound/PlayServerboundPlayerPositionAndRotationMessage";
 import { PlayServerboundPlayerPositionMessage } from "./play/serverbound/PlayServerboundPlayerPositionMessage";
+import { PlayServerboundPlayerRotationMessage } from "./play/serverbound/PlayServerboundPlayerRotationMessage";
 import { PlayServerboundPluginMessage } from "./play/serverbound/PlayServerboundPluginMessage";
 import { PlayServerboundTeleportConfirmMessage } from "./play/serverbound/PlayServerboundTeleportConfirmMessage";
 import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage";
@@ -37,17 +39,19 @@ export default class MessageHandlerFactory {
   public constructor(public readonly server: Server) {
     this.registered
       .add(new HandshakeMessageHandler(this.server))
-      .add(new StatusPingMessageHandler(this.server))
-      .add(new StatusRequestMessageHandler(this.server))
       .add(new LoginEncryptionResponseMessage(this.server))
       .add(new LoginStartMessage(this.server))
-      .add(new PlayServerboundPlayerPositionMessage(this.server))
+      .add(new PlayServerboundChatMessage(this.server))
       .add(new PlayServerboundClientSettingsMessage(this.server))
+      .add(new PlayServerboundHeldItemChangeMessage(this.server))
+      .add(new PlayServerboundKeepAliveMessage(this.server))
+      .add(new PlayServerboundPlayerPositionAndRotationMessage(this.server))
+      .add(new PlayServerboundPlayerPositionMessage(this.server))
+      .add(new PlayServerboundPlayerRotationMessage(this.server))
       .add(new PlayServerboundPluginMessage(this.server))
       .add(new PlayServerboundTeleportConfirmMessage(this.server))
-      .add(new PlayServerboundPlayerPositionAndRotationMessage(this.server))
-      .add(new PlayServerboundKeepAliveMessage(this.server))
-      .add(new PlayServerboundChatMessage(this.server));
+      .add(new StatusPingMessageHandler(this.server))
+      .add(new StatusRequestMessageHandler(this.server));
   }
 
   public getHandler(id: number, state: ConnectionState): MessageHandler | null {

@@ -17,9 +17,10 @@
 
 import { MineBuffer } from "../../../../../../native";
 import { ConnectionState } from "../../../../../server/Connection";
-import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
 import { ClientChatPosition } from "../../../../../utils/Enums";
+import { filterCount, filterMap } from "../../../../../utils/SetUtils";
+import { Player } from "../../../../../world/Player";
 import { MessageHandler } from "../../../Message";
 
 export class PlayServerboundChatMessage extends MessageHandler {
@@ -32,11 +33,11 @@ export class PlayServerboundChatMessage extends MessageHandler {
     });
   }
 
-  public handle(buffer: MineBuffer, player: Player): void {
+  public async handle(buffer: MineBuffer, player: Player): Promise<void> {
     let message = buffer.readString();
 
     if (message.length > 256) {
-      player.disconnect("Invalid chat message");
+      await player.disconnect("Invalid chat message");
       return;
     }
 
@@ -53,7 +54,7 @@ export class PlayServerboundChatMessage extends MessageHandler {
 
       switch (command?.toLowerCase()) {
         case "help":
-          player.sendChat({
+          await player.sendChat({
             text: "Available commands:\n",
             extra: [
               "/help - show this message\n",
@@ -64,34 +65,41 @@ export class PlayServerboundChatMessage extends MessageHandler {
             ],
           });
           break;
-        case "list":
-          player.sendChat({
-            text: `Online players (${[...this.server.players].filter(p => p.connection.state === ConnectionState.PLAY).length}):\n`,
-            extra: [...this.server.players].filter(p => p.connection.state === ConnectionState.PLAY).map(p => p.username),
+        case "list": {
+          const onlineCount = filterCount(this.server.players(), p => p.connection.state === ConnectionState.PLAY);
+          const onlineList = filterMap(
+            this.server.players(),
+            p => p.connection.state === ConnectionState.PLAY,
+            p => p.username,
+          );
+          await player.sendChat({
+            text: `Online players (${onlineCount}):`,
+            extra: [...onlineList.map(username => `\n- ${username}`)],
           });
           break;
+        }
         case "msg": {
           if (tokens.length < 2) {
-            player.sendChat({
+            await player.sendChat({
               text: "Usage: /msg <player> <message>",
             });
             break;
           }
           const [target, ...message] = tokens;
-          const targetPlayer = [...this.server.players].find(p => p.username === target);
+          const targetPlayer = this.server.getPlayer(target);
           if (targetPlayer) {
-            targetPlayer.sendChat({
+            await targetPlayer.sendChat({
               text: `${player.username} whispers to you: `,
               color: "gray",
               extra: [message.join(" ")],
             });
-            player.sendChat({
+            await player.sendChat({
               text: `You whisper to ${target}: `,
               color: "gray",
               extra: [message.join(" ")],
             });
           } else {
-            player.sendChat({
+            await player.sendChat({
               text: `${target} is not online.`,
               color: "red",
             });
@@ -100,13 +108,13 @@ export class PlayServerboundChatMessage extends MessageHandler {
         }
         case "me": {
           if (tokens.length < 1) {
-            player.sendChat({
+            await player.sendChat({
               text: "Usage: /me <message>",
             });
             break;
           }
           const message = tokens.join(" ");
-          this.server.broadcastChat({
+          await this.server.broadcastChat({
             text: `${player.username} ${message}`,
             italic: true,
           });
@@ -114,12 +122,12 @@ export class PlayServerboundChatMessage extends MessageHandler {
         }
         case "stop":
           // TODO: secure, etc.
-          this.server.stop();
+          await this.server.stop();
           break;
         case undefined:
           break;
         default:
-          player.sendChat({ text: "Unknown command", color: "red" });
+          await player.sendChat({ text: "Unknown command", color: "red" });
       }
 
       this.server.logger.info(`${player.username} issued command: ${message}`);
@@ -128,7 +136,7 @@ export class PlayServerboundChatMessage extends MessageHandler {
     }
 
     player.server.logger.info(`<${player.username}> ${message}`);
-    this.server.broadcastChat(
+    await this.server.broadcastChat(
       {
         text: `<${player.username}> `,
         extra: [message],

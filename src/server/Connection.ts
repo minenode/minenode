@@ -18,11 +18,11 @@
 import * as net from "net";
 import util, { inspect } from "util";
 
+import { EventEmitter } from "eventemitter3";
 import CompressionState from "./CompressionState";
 import EncryptionState from "./EncryptionState";
 import Server from "./Server";
 import { MineBuffer } from "../../native/index";
-import { Base } from "../core/Base";
 import { IClientboundMessage } from "../net/protocol/Message";
 import LoginDisconnectMessage from "../net/protocol/messages/login/clientbound/LoginDisconnectMessage";
 import { PlayClientboundDisconnectMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundDisconnectMessage";
@@ -40,22 +40,11 @@ export enum ConnectionState {
 /**
  * A wrapper class around an incoming TCP socket. Handles message framing, encryption, etc.
  */
-export default class Connection extends Base<
-  void,
-  {
-    message: [{ packetID: number; payload: MineBuffer }];
-    disconnect: [];
-    stateChange: [ConnectionState];
-  }
-> {
-  protected _tick(): void {
-    throw new Error("Method not implemented.");
-  }
-
-  protected _initialize(): void {
-    throw new Error("Method not implemented.");
-  }
-
+export default class Connection extends EventEmitter<{
+  message: [{ packetID: number; payload: MineBuffer }];
+  disconnect: [];
+  stateChange: [ConnectionState];
+}> {
   #state: ConnectionState = ConnectionState.HANDSHAKE;
 
   public get state(): ConnectionState {
@@ -65,6 +54,8 @@ export default class Connection extends Base<
   protected set state(state: ConnectionState) {
     this.#state = state;
   }
+
+  public readonly server: Server;
 
   public socket: net.Socket;
   public remote: string;
@@ -77,8 +68,8 @@ export default class Connection extends Base<
   protected timeout: NodeJS.Timeout | null = null;
 
   public constructor(server: Server, socket: net.Socket) {
-    super(server);
-
+    super();
+    this.server = server;
     this.socket = socket;
     this.remote = `${socket.remoteAddress!}:${socket.remotePort!}`;
 
@@ -93,28 +84,28 @@ export default class Connection extends Base<
     this.resetTimeout();
   }
 
-  protected override _destroy(): void {
+  public destroy() {
     this.socket.destroy();
-    if (this.timeout) clearTimeout(this.timeout);
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
   }
 
   protected resetTimeout(): void {
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
-    this.timeout = setTimeout(() => {
-      this.disconnect("Timed out");
-    }, 30 * 1000); // TODO: config
+    this.timeout = setTimeout(() => void this.disconnect("Timed out"), 30 * 1000); // TODO: config
   }
 
-  public writeMessage(message: IClientboundMessage): void {
+  public async writeMessage(message: IClientboundMessage): Promise<void> {
     const buffer = new MineBuffer();
     message.encode(buffer);
-    // this.server.logger.debug(`${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining})`);
-    this.write(message.id, buffer);
+    this.server.logger.debug(`${this.remote}: sending message 0x${message.id.toString(16)} (len = ${buffer.remaining()})`);
+    await this.write(message.id, buffer);
   }
 
-  public write(packetID: number, payload: MineBuffer): void {
+  public write(packetID: number, payload: MineBuffer): Promise<void> {
     let buffer = new MineBuffer();
     buffer.writeVarInt(packetID);
     buffer.writeBytes(payload.readRemaining());
@@ -141,26 +132,32 @@ export default class Connection extends Base<
       finalBuffer = this.encryption.updateCipher(finalBuffer);
     }
 
-    this.socket.write(finalBuffer);
+    return new Promise((resolve, reject) => {
+      this.socket.write(finalBuffer, err => (err ? reject(err) : resolve()));
+    });
   }
 
   public hardDisconnect(): void {
     this.socket.destroy();
   }
 
-  public disconnect(reason: Chat): void {
+  public async disconnect(reason: Chat): Promise<void> {
     this.server.logger.warn(`${this.remote}: disconnect called with reason: ${consoleFormatChat(reason)}`);
+    if (this.socket.destroyed) {
+      return;
+    }
+
     if (this.state === ConnectionState.HANDSHAKE || this.state === ConnectionState.STATUS) {
       this.hardDisconnect();
     } else if (this.state === ConnectionState.LOGIN) {
       const msg = new LoginDisconnectMessage(reason);
-      this.writeMessage(msg);
-      this.socket.end(); // async
+      await this.writeMessage(msg);
+      await new Promise<void>(r => this.socket.end(() => r()));
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (this.state === ConnectionState.PLAY) {
       const msg = new PlayClientboundDisconnectMessage({ reason });
-      this.writeMessage(msg);
-      this.socket.end(); // async
+      await this.writeMessage(msg);
+      await new Promise<void>(r => this.socket.end(() => r()));
     } else {
       this.hardDisconnect();
     }
@@ -177,7 +174,7 @@ export default class Connection extends Base<
       this._onData(data);
     } catch (error) {
       this.server.logger.error(`${this.remote}: ${inspect(error)}`);
-      this.disconnect((error as Error).message);
+      void this.disconnect((error as Error).message);
     }
   }
 

@@ -17,9 +17,9 @@
 
 import { MineBuffer } from "../../../../../../native/index";
 import { ConnectionState } from "../../../../../server/Connection";
-import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
 import { PluginChannel } from "../../../../../utils/Enums";
+import { Player } from "../../../../../world/Player";
 import { MessageHandler } from "../../../Message";
 
 export class PlayServerboundPluginMessage extends MessageHandler {

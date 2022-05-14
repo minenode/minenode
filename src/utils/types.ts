@@ -15,6 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const MINENODE_VERSION = "0.0.0";
-export const PROTOCOL_VERSION = 758;
-export const GAME_VERSION = "1.18.2";
+export type Mutable<T> = {
+  -readonly [P in keyof T]: T[P];
+};
+
+export function mut<T>(obj: T): Mutable<T> {
+  return obj;
+}
+
+export function mutate<T, K extends keyof T>(obj: T, k: K, v: Mutable<T>[K]): void {
+  obj[k] = v;
+}

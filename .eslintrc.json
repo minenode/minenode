@@ -15,6 +15,7 @@
         }
       }
     ],
-    "no-console": "error"
+    "no-console": "error",
+    "@typescript-eslint/method-signature-style": "off"
   }
 }

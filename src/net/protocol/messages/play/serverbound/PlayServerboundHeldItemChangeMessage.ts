@@ -15,29 +15,28 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MineBuffer } from "../../../../../../native/index";
-import { MessageHandler } from "../../../../../net/protocol/Message";
+import { MineBuffer } from "../../../../../../native";
 import { ConnectionState } from "../../../../../server/Connection";
 import Server from "../../../../../server/Server";
 import { Player } from "../../../../../world/Player";
-import StatusPongMessage from "../clientbound/StatusPongMessage";
+import { MessageHandler } from "../../../Message";
 
-export class StatusPingMessageHandler extends MessageHandler {
+export class PlayServerboundHeldItemChangeMessage extends MessageHandler {
   public constructor(server: Server) {
     super({
-      state: ConnectionState.STATUS,
-      id: 0x01,
-      label: "status request",
-      server: server,
+      state: ConnectionState.PLAY,
+      id: 0x25,
+      label: "held item change",
+      server,
     });
   }
 
   public async handle(buffer: MineBuffer, player: Player): Promise<void> {
-    const payload = buffer.readLong();
-
-    const response = new StatusPongMessage(payload);
-    await player.connection.writeMessage(response);
-
-    this.server.logger.debug(`${player.connection.remote}: status ping (payload = ${payload})`);
+    const slot = buffer.readShort(); // lol why is this a short?
+    if (slot < 0 || slot > 8) {
+      await player.disconnect("Invalid hotbar slot");
+      return;
+    }
+    if (slot !== player.hotbarSlot) player.hotbarSlot = slot;
   }
 }

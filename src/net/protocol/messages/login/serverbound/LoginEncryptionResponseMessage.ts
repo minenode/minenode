@@ -20,8 +20,8 @@ import * as crypto from "crypto";
 import { MineBuffer } from "../../../../../../native/index";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import { ConnectionState } from "../../../../../server/Connection";
-import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
+import { Player } from "../../../../../world/Player";
 import LoginSetCompressionMessage from "../clientbound/LoginSetCompressionMessage";
 import LoginSuccessMessage from "../clientbound/LoginSuccessMessage";
 
@@ -55,12 +55,12 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
     player.connection.encryption.initialize(decryptedSharedSecret);
     player.connection.encryption.enabled = true;
 
-    player.sendPacket(new LoginSetCompressionMessage(this.server.options.compressionThreshold));
+    await player.connection.writeMessage(new LoginSetCompressionMessage(this.server.options.compressionThreshold));
     player.connection.compression.enabled = true;
 
     // TODO: auth
 
-    player.sendPacket(
+    await player.connection.writeMessage(
       new LoginSuccessMessage({
         uuid: player.uuid,
         username: player.username,

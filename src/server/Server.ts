@@ -23,15 +23,17 @@ import util from "util";
 import { EventEmitter } from "eventemitter3";
 
 import Connection, { ConnectionState } from "./Connection";
-import { Player } from "./Player";
-import { destroy } from "../core/Base";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
 import { Chat, consoleFormatChat } from "../utils/Chat";
 import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
 import { getRootDirectory } from "../utils/DeployUtils";
-import { ClientChatPosition } from "../utils/Enums";
+import { ClientChatPosition, InventoryHotbarSlot } from "../utils/Enums";
 import { Logger, LogLevel, StdoutConsumer, FileConsumer } from "../utils/Logger";
 import { Performance } from "../utils/Performance";
+import { first, parallel, find } from "../utils/SetUtils";
+import { Dimension } from "../world/Dimension";
+import { Player } from "../world/Player";
+import { World } from "../world/World";
 
 export interface ServerOptions {
   compressionThreshold: number;
@@ -45,9 +47,29 @@ export default class Server extends EventEmitter<{
   playerJoin: [Player];
 }> {
   public tcpServer: net.Server = new net.Server();
-  // public connections: Set<Connection> = new Set();
-  public players: Set<Player> = new Set();
   public handlerFactory: MessageHandlerFactory;
+
+  public worlds: Set<World> = new Set();
+
+  public *dimensions(): IterableIterator<Dimension> {
+    for (const world of this.worlds) {
+      for (const dimension of world.dimensions) {
+        yield dimension;
+      }
+    }
+  }
+
+  public *players(): IterableIterator<Player> {
+    for (const world of this.worlds) {
+      for (const player of world.players()) {
+        yield player;
+      }
+    }
+  }
+
+  public getPlayer(username: string): Player | null {
+    return find(this.players(), player => player.username === username) ?? null;
+  }
 
   public encodedFavicon?: string;
   public keypair!: crypto.KeyPairKeyObjectResult;
@@ -56,9 +78,9 @@ export default class Server extends EventEmitter<{
   public ticker: NodeJS.Timer | null = null;
   private running = false;
 
-  public readonly performance = new Performance(100);
+  public readonly performance = new Performance(20 * 60 * 5);
 
-  public brand = "MineNode";
+  public readonly brand = "MineNode";
 
   protected _nextEntityId = 1;
 
@@ -69,16 +91,26 @@ export default class Server extends EventEmitter<{
   public constructor(public readonly options: Readonly<ServerOptions>) {
     super();
 
+    // TODO: this is temporary
+    const mainWorld = new World(this);
+    this.worlds.add(mainWorld);
+    const mainWorldOverworld = new Dimension(mainWorld, "overworld");
+    mainWorld.dimensions.add(mainWorldOverworld);
+
     // Bind events
     this.tcpServer.on("connection", this._onSocketConnect.bind(this));
 
     this.handlerFactory = new MessageHandlerFactory(this);
   }
 
-  public broadcastChat(chat: Chat, position: ClientChatPosition = ClientChatPosition.CHAT_BOX, sender: string | null = null, log = true): void {
-    for (const player of this.players) {
+  public getEntityId(): number {
+    return this._nextEntityId++;
+  }
+
+  public async broadcastChat(chat: Chat, position: ClientChatPosition = ClientChatPosition.CHAT_BOX, sender: string | null = null, log = true): Promise<void> {
+    for (const player of this.players()) {
       if (player.connection.state === ConnectionState.PLAY) {
-        player.sendChat(chat, position, sender);
+        await player.sendChat(chat, position, sender);
       }
     }
     if (log) {
@@ -126,32 +158,31 @@ export default class Server extends EventEmitter<{
 
     // Start tick
     this.running = true;
-    this.ticker = setInterval(this._tick.bind(this), 1000 / 20);
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    this.ticker = setInterval(this.tick.bind(this), 1000 / 20);
     this.logger.info("server listening");
   }
 
-  public stop(): void {
+  public async stop(): Promise<void> {
     this.running = false;
     if (this.ticker) {
       clearInterval(this.ticker);
     }
-    for (const player of this.players) {
-      player.disconnect("Server is shutting down");
-    }
+
+    await parallel(this.players(), player => player.disconnect("Server is shutting down"));
+
     this.tcpServer.close();
     this.logger.info("server stopped");
     this.tcpServer.removeAllListeners();
     this.removeAllListeners();
   }
 
-  protected _tick(): void {
+  protected async tick(): Promise<void> {
     this.performance.tick();
     this.tickCount++;
     this.emit("tick", this.tickCount);
-    for (const player of this.players) {
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      player["_tick"](this.tickCount);
-    }
+
+    await parallel(this.players(), player => player.tick(this.tickCount));
 
     if (this.tickCount % (20 * 50) === 0) {
       this.logger.debug(`tick ${this.tickCount}, TPS = ${((this.performance.average / 1_000_000) * (20 / 50)).toFixed(1)}`);
@@ -176,15 +207,19 @@ export default class Server extends EventEmitter<{
 
     this.logger.debug(`${connection.remote}: connected`);
 
-    const player = new Player(this, connection);
-    this.players.add(player);
+    // TODO: this is temporary
+    const dimension = first(this.dimensions())!;
+
+    const temporaryUsername = Date.now().toString(36);
+    const player = new Player(dimension, this.getEntityId(), connection, { username: temporaryUsername, hotbarSlot: InventoryHotbarSlot.SLOT_1 });
+    dimension.players.add(player);
 
     // Bind connection events
     // TODO: move this to Player class?
     connection.on("disconnect", () => {
       this.logger.debug(`${connection.remote}: disconnected`);
-      this.players.delete(player);
-      destroy(player);
+      dimension.players.delete(player);
+      void player.end();
     });
 
     connection.on("message", msg => {
@@ -195,7 +230,7 @@ export default class Server extends EventEmitter<{
           handler.handle(msg.payload, player);
         } catch (err) {
           this.logger.error(util.inspect(err));
-          connection.disconnect({ text: String(err), color: "red" });
+          void connection.disconnect({ text: String(err), color: "red" });
         }
       } else {
         // TODO handle

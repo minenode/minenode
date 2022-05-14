@@ -18,10 +18,11 @@
 import { MineBuffer } from "../../../../../../native/index";
 import { MessageHandler } from "../../../../../net/protocol/Message";
 import { ConnectionState } from "../../../../../server/Connection";
-import { Player } from "../../../../../server/Player";
 import Server from "../../../../../server/Server";
 import { formatChat } from "../../../../../utils/Chat";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
+import { filterCount, filterMap } from "../../../../../utils/SetUtils";
+import { Player } from "../../../../../world/Player";
 import StatusResponseMessage from "../clientbound/StatusResponseMessage";
 
 export class StatusRequestMessageHandler extends MessageHandler {
@@ -34,7 +35,7 @@ export class StatusRequestMessageHandler extends MessageHandler {
     });
   }
 
-  public handle(_buffer: MineBuffer, player: Player): void {
+  public async handle(_buffer: MineBuffer, player: Player): Promise<void> {
     const response = new StatusResponseMessage({
       version: {
         name: GAME_VERSION,
@@ -42,15 +43,17 @@ export class StatusRequestMessageHandler extends MessageHandler {
       },
       players: {
         max: this.server.options.maxPlayers,
-        online: [...this.server.players].filter(player => player.connection.state === ConnectionState.PLAY).length,
-        sample: [...this.server.players]
-          .filter(player => player.connection.state === ConnectionState.PLAY)
-          .map(player => ({ name: player.username, id: player.uuid })),
+        online: filterCount(this.server.players(), player => player.connection.state === ConnectionState.PLAY),
+        sample: filterMap(
+          this.server.players(),
+          player => player.connection.state === ConnectionState.PLAY,
+          player => ({ name: player.username, id: player.uuid }),
+        ),
       },
       description: formatChat(this.server.options.motd, "&"),
       favicon: this.server.encodedFavicon,
     });
-    player.sendPacket(response);
+    await player.connection.writeMessage(response);
     this.server.logger.debug(`${player.connection.remote}: status request`);
   }
 }

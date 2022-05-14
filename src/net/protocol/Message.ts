@@ -17,8 +17,8 @@
 
 import { MineBuffer } from "../../../native/index";
 import { ConnectionState } from "../../server/Connection";
-import { Player } from "../../server/Player";
 import Server from "../../server/Server";
+import { Player } from "../../world/Player";
 
 export interface MessageHandlerOptions {
   state: ConnectionState;
