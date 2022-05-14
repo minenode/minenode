@@ -200,8 +200,8 @@ export class Player extends Entity {
         await this.server.nextTick();
         const joinGameResponse = new PlayClientboundJoinGameMessage({
           entityId: this.entityId,
-          isHardcore: false,
-          gamemode: GameMode.CREATIVE,
+          isHardcore: this.world.isHardcore,
+          gamemode: GameMode.CREATIVE, // TODO
           previousGameMode: GameMode.NONE,
           worlds: ["minecraft:overworld"],
           dimensionCodec: {
@@ -280,7 +280,7 @@ export class Player extends Entity {
           },
           worldName: "minecraft:overworld",
           hashedSeed: 1n,
-          maxPlayers: 20,
+          maxPlayers: 20, // TODO
           viewDistance: 10,
           simulationDistance: 10,
           reducedDebugInfo: false,

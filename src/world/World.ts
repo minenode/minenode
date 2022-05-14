@@ -22,12 +22,19 @@ import Server from "../server/Server";
 import { Difficulty } from "../utils/Enums";
 import { parallel } from "../utils/SetUtils";
 
+export interface WorldOptions {
+  difficulty?: Difficulty;
+  difficultyLocked?: boolean;
+  isHardcore?: boolean;
+}
+
 export class World implements Tickable {
   public readonly server: Server;
   public readonly dimensions: Set<Dimension> = new Set();
 
   private _difficulty: Difficulty;
   public readonly difficultyLocked: boolean;
+  public readonly isHardcore: boolean;
 
   public get difficulty(): Difficulty {
     return this._difficulty;
@@ -41,10 +48,11 @@ export class World implements Tickable {
     void parallel(this.players(), player => player.sendDifficulty(difficulty));
   }
 
-  public constructor(server: Server, difficulty = Difficulty.NORMAL, difficultyLocked = false) {
+  public constructor(server: Server, options: WorldOptions = {}) {
     this.server = server;
-    this._difficulty = difficulty;
-    this.difficultyLocked = difficultyLocked;
+    this._difficulty = options.difficulty ?? Difficulty.NORMAL;
+    this.difficultyLocked = options.difficultyLocked ?? false;
+    this.isHardcore = options.isHardcore ?? false;
   }
 
   public init(): void {
