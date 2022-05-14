@@ -29,7 +29,7 @@ if (!fs.existsSync(configFilePath)) {
     configFilePath,
     yaml.dump({
       compressionThreshold: 256,
-      motd: "A Minecraft Server",
+      motd: "A Minenode Server",
       maxPlayers: 5,
       favicon: "",
     }),

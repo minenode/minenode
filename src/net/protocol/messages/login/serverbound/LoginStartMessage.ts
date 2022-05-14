@@ -20,7 +20,6 @@ import { MessageHandler } from "../../../../../net/protocol/Message";
 import { ConnectionState } from "../../../../../server/Connection";
 import Server from "../../../../../server/Server";
 import { GAME_VERSION, PROTOCOL_VERSION } from "../../../../../utils/Constants";
-import { InventoryHotbarSlot } from "../../../../../utils/Enums";
 import { Player } from "../../../../../world/Player";
 import LoginEncryptionRequestMessage from "../clientbound/LoginEncryptionRequestMessage";
 
@@ -42,9 +41,7 @@ export class LoginStartMessage extends MessageHandler {
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/dot-notation
     player.username = username;
-    player.hotbarSlot = InventoryHotbarSlot.SLOT_1;
 
     this.server.logger.info(`${player.connection.remote}: Login start for username '${username}'`);
 

@@ -27,7 +27,7 @@ import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactor
 import { Chat, consoleFormatChat } from "../utils/Chat";
 import { GAME_VERSION, MINENODE_VERSION, PROTOCOL_VERSION } from "../utils/Constants";
 import { getRootDirectory } from "../utils/DeployUtils";
-import { ClientChatPosition, InventoryHotbarSlot } from "../utils/Enums";
+import { ClientChatPosition } from "../utils/Enums";
 import { Logger, LogLevel, StdoutConsumer, FileConsumer } from "../utils/Logger";
 import { Performance } from "../utils/Performance";
 import { first, parallel, find } from "../utils/SetUtils";
@@ -210,8 +210,7 @@ export default class Server extends EventEmitter<{
     // TODO: this is temporary
     const dimension = first(this.dimensions())!;
 
-    const temporaryUsername = Date.now().toString(36);
-    const player = new Player(dimension, this.getEntityId(), connection, { username: temporaryUsername, hotbarSlot: InventoryHotbarSlot.SLOT_1 });
+    const player = new Player(dimension, this.getEntityId(), connection);
     dimension.players.add(player);
 
     // Bind connection events

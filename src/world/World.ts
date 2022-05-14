@@ -19,13 +19,32 @@ import { Dimension } from "./Dimension";
 import { Player } from "./Player";
 import { Tickable } from "./Tickable";
 import Server from "../server/Server";
+import { Difficulty } from "../utils/Enums";
+import { parallel } from "../utils/SetUtils";
 
 export class World implements Tickable {
   public readonly server: Server;
   public readonly dimensions: Set<Dimension> = new Set();
 
-  public constructor(server: Server) {
+  private _difficulty: Difficulty;
+  public readonly difficultyLocked: boolean;
+
+  public get difficulty(): Difficulty {
+    return this._difficulty;
+  }
+
+  public set difficulty(difficulty: Difficulty) {
+    if (this.difficultyLocked) {
+      throw new Error("Difficulty is locked");
+    }
+    this._difficulty = difficulty;
+    void parallel(this.players(), player => player.sendDifficulty(difficulty));
+  }
+
+  public constructor(server: Server, difficulty = Difficulty.NORMAL, difficultyLocked = false) {
     this.server = server;
+    this._difficulty = difficulty;
+    this.difficultyLocked = difficultyLocked;
   }
 
   public init(): void {

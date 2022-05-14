@@ -51,7 +51,7 @@ export default class Connection extends EventEmitter<{
     return this.#state;
   }
 
-  protected set state(state: ConnectionState) {
+  public set state(state: ConnectionState) {
     this.#state = state;
   }
 

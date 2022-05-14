@@ -17,11 +17,12 @@
 
 import { MineBuffer } from "../../../../../../native/index";
 import { PluginChannel } from "../../../../../utils/Enums";
+import { Consumer } from "../../../../../utils/types";
 import { IClientboundMessage } from "../../../Message";
 
 export interface PlayClientboundPluginMessageOptions {
   channel: PluginChannel; // TODO: identifier type (lowercase/:)
-  data: MineBuffer; // TODO: Plugin channel data type
+  data: MineBuffer | Consumer<MineBuffer>; // TODO: Plugin channel data type
 }
 
 export class PlayClientboundPluginMessage implements IClientboundMessage {
@@ -32,7 +33,12 @@ export class PlayClientboundPluginMessage implements IClientboundMessage {
 
   public constructor(options: PlayClientboundPluginMessageOptions) {
     this.channel = options.channel;
-    this.data = options.data;
+    if (typeof options.data === "function") {
+      this.data = new MineBuffer();
+      options.data(this.data);
+    } else {
+      this.data = options.data;
+    }
   }
 
   public encode(buffer: MineBuffer): void {

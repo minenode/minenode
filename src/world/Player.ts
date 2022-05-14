@@ -17,7 +17,7 @@
 
 import { Dimension } from "./Dimension";
 import { Entity } from "./Entity";
-import { MineBuffer, Vec3, Vec5 } from "../../native";
+import { Vec3, Vec5 } from "../../native";
 import { int, float, double } from "../data/NBT";
 import { PlayClientboundChatMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundChatMessage";
 import { PlayClientboundEntityStatusMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundEntityStatusMessage";
@@ -33,18 +33,18 @@ import { AllEntityStatus, Difficulty, GameMode, InventoryHotbarSlot, PluginChann
 
 export interface PlayerOptions {
   username: string;
-  hotbarSlot: InventoryHotbarSlot;
 }
 
 export class Player extends Entity {
   public readonly connection: Connection;
 
-  public constructor(dimension: Dimension, entityId: number, connection: Connection, options: PlayerOptions) {
+  public constructor(dimension: Dimension, entityId: number, connection: Connection, options?: PlayerOptions) {
     super(dimension, entityId);
     this.connection = connection;
 
-    this.username = options.username;
-    this.hotbarSlot = options.hotbarSlot;
+    if (options) {
+      this.username = options.username;
+    }
   }
 
   private _username: string | null = null;
@@ -71,7 +71,7 @@ export class Player extends Entity {
 
   public async setHotbarSlotAsync(slot: InventoryHotbarSlot): Promise<void> {
     if (this.connection.state !== ConnectionState.PLAY) {
-      this.server.logger.warn(`Player.setHotbarSlot can only be called in PLAY state, but is called in ${ConnectionState[this.connection.state]}`);
+      this.server.logger.warn(`Player.setHotbarSlotAsync can only be called in PLAY state, but is called in ${ConnectionState[this.connection.state]}`);
       return;
     }
     await this.connection.writeMessage(
@@ -114,6 +114,7 @@ export class Player extends Entity {
     this._position = position;
     this._isOnGround = onGround;
     this._lastPositionOnGround = onGround ? position : null;
+    // TODO: writeMessage
     await Promise.resolve();
   }
 
@@ -149,8 +150,17 @@ export class Player extends Entity {
     }
   }
 
-  public override end(): void {
+  public override async end(): Promise<void> {
     this.connection.destroy();
+    if (this.connection.state === ConnectionState.PLAY) {
+      await this.server.broadcastChat(
+        {
+          color: "yellow",
+          text: `${this.username} left the game`,
+        },
+        ClientChatPosition.SYSTEM_MESSAGE,
+      );
+    }
   }
 
   public getHotbarSlot(): InventoryHotbarSlot {
@@ -169,10 +179,18 @@ export class Player extends Entity {
     );
   }
 
+  public async sendDifficulty(difficulty: Difficulty, difficultyLocked = false) {
+    await this.connection.writeMessage(
+      new PlayClientboundServerDifficultyMessage({
+        difficulty,
+        difficultyLocked,
+      }),
+    );
+  }
+
   public async setState(state: ConnectionState): Promise<void> {
     if (state < this.connection.state) throw new Error("Cannot go back in state");
-    // eslint-disable-next-line @typescript-eslint/dot-notation
-    this.connection["state"] = state;
+    this.connection.state = state;
     switch (state) {
       case ConnectionState.LOGIN: {
         break;
@@ -275,25 +293,19 @@ export class Player extends Entity {
           new PlayClientboundPluginMessage({
             channel: PluginChannel.MINECRAFT_BRAND,
             // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-            data: (() => {
-              const b = new MineBuffer();
+            data: b => {
               b.writeString(this.dimension.world.server.brand);
-              return b;
-            })(),
+            },
           }),
         );
-        await this.connection.writeMessage(
-          new PlayClientboundServerDifficultyMessage({
-            difficulty: Difficulty.NORMAL,
-            difficultyLocked: false,
-          }),
-        );
+        await this.sendDifficulty(this.world.difficulty);
         await this.connection.writeMessage(
           new PlayClientboundEntityStatusMessage({
             entityId: this.entityId,
             status: AllEntityStatus.PLAYER__SET_OP_PERMISSION_4, // TODO: read from config, validate, etc.
           }),
         );
+        // TODO: refactor to set position()
         await this.connection.writeMessage(
           new PlayClientboundPositionAndLookMessage({
             position: new Vec5(0, 1, 0, 0, 0),

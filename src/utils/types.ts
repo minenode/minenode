@@ -26,3 +26,7 @@ export function mut<T>(obj: T): Mutable<T> {
 export function mutate<T, K extends keyof T>(obj: T, k: K, v: Mutable<T>[K]): void {
   obj[k] = v;
 }
+
+export type Callable<T extends any[], U> = (...t: T) => U;
+export type Provider<T> = Callable<[], T>;
+export type Consumer<T> = Callable<[T], void>;
