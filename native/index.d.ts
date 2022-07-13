@@ -31,7 +31,7 @@ export class MineBuffer {
   readFloat(): number
   readDouble(): number
   readVarInt(): number
-  readVarLong(): BigInt
+  readVarLong(): bigint
   readString(): string
   readShort(): number
   readUShort(): number
@@ -45,13 +45,13 @@ export class MineBuffer {
   writeDouble(val: number): void
   writeInt(val: number): void
   writeUInt(val: number): void
-  writeLong(val: BigInt): void
+  writeLong(val: bigint): void
   writePosition(val: Vec3): void
   writeUUID(val: string): void
   writeShort(val: number): void
   writeUShort(val: number): void
   writeVarInt(val: number): void
-  writeVarLong(val: BigInt): void
+  writeVarLong(val: bigint): void
   writeString(val: string): void
 }
 export class Vec2 {

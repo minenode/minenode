@@ -1,4 +1,4 @@
 {
-  "recommendations": ["dbaeumer.vscode-eslint", "Gruntfuggly.todo-tree", "pmneo.tsimporter", "esbenp.prettier-vscode", "matklad.rust-analyzer"],
+  "recommendations": ["dbaeumer.vscode-eslint", "Gruntfuggly.todo-tree", "pmneo.tsimporter", "esbenp.prettier-vscode", "rust-lang.rust-analyzer"],
   "unwantedRecommendations": ["rust-lang.rust"]
 }
