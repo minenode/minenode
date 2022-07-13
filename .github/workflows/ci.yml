@@ -2,39 +2,28 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
   workflow_dispatch:
 
 jobs:
   lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Install Node
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile --non-interactive
-      - name: Lint
-        run: yarn lint
-
-  test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Install Node
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@v2
+      - uses: pnpm/action-setup@v2.2.2
         with:
-          node-version: 16
+          version: 7
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 17
+          cache: pnpm
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --non-interactive
+        run: pnpm install
+      - name: Lint
+        run: pnpm lint
       - name: Test
-        run: yarn test
+        run: pnpm test
