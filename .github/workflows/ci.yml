@@ -23,6 +23,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install
+      - name: Build
+        run: pnpm build:rs:debug
       - name: Lint
         run: pnpm lint
       - name: Test
