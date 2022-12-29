@@ -23,6 +23,8 @@ import { World } from "./World";
 import Server from "../server/Server";
 
 export abstract class Entity implements Tickable, DimensionMember, WithUniqueId {
+  public static RUNTIME_ID = 0;
+
   public readonly dimension: Dimension;
   public readonly entityId: number;
   public readonly uuid: string;

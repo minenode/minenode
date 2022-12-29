@@ -189,7 +189,7 @@ export default class Connection extends EventEmitter<{
 
     this.buffer.writeBytes(data);
 
-    while (this.buffer.remaining() > 0) {
+    do {
       const readOffset = this.buffer.readOffset;
       let payload: MineBuffer;
 
@@ -217,13 +217,9 @@ export default class Connection extends EventEmitter<{
 
       const packetID = payload.readVarInt();
       this.emit("message", { packetID, payload });
-    }
+    } while (this.buffer.remaining() > 0);
 
-    if (this.buffer.remaining() > 0) {
-      this.buffer = new MineBuffer(this.buffer.readRemaining());
-    } else {
-      this.buffer = new MineBuffer();
-    }
+    this.buffer = new MineBuffer();
   }
 
   protected _onError(error: unknown): void {
