@@ -32,6 +32,7 @@ import { Logger, LogLevel, StdoutConsumer, FileConsumer } from "../utils/Logger"
 import { Performance } from "../utils/Performance";
 import { first, parallel, find } from "../utils/SetUtils";
 import { Dimension } from "../world/Dimension";
+import { Entity } from "../world/Entity";
 import { Player } from "../world/Player";
 import { World } from "../world/World";
 
@@ -82,8 +83,6 @@ export default class Server extends EventEmitter<{
 
   public readonly brand = "MineNode";
 
-  protected _nextEntityId = 1;
-
   public readonly logger = new Logger("Server")
     .withConsumer(new StdoutConsumer({ minLevel: process.env.MINENODE_DEBUG ? LogLevel.DEBUG : LogLevel.INFO }))
     .withConsumer(new FileConsumer({ minLevel: process.env.MINENODE_DEBUG ? LogLevel.DEBUG : LogLevel.INFO }));
@@ -101,10 +100,6 @@ export default class Server extends EventEmitter<{
     this.tcpServer.on("connection", this._onSocketConnect.bind(this));
 
     this.handlerFactory = new MessageHandlerFactory(this);
-  }
-
-  public getEntityId(): number {
-    return this._nextEntityId++;
   }
 
   public async broadcastChat(chat: Chat, position: ClientChatPosition = ClientChatPosition.CHAT_BOX, sender: string | null = null, log = true): Promise<void> {
@@ -210,7 +205,7 @@ export default class Server extends EventEmitter<{
     // TODO: this is temporary
     const dimension = first(this.dimensions())!;
 
-    const player = new Player(dimension, this.getEntityId(), connection);
+    const player = new Player(dimension, ++Entity.RUNTIME_ID, connection);
     dimension.players.add(player);
 
     // Bind connection events
