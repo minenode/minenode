@@ -24,7 +24,7 @@ export enum TagIdentifier {
   ITEM = "minecraft:item",
 }
 
-// See: https://minecraft.fandom.com/wiki/Tag
+// See: https://minecraft.wiki/w/Tag
 // TODO: function types
 export enum TagBlockType {
   MINEABLE_AXE = "mineable/axe",
@@ -267,7 +267,7 @@ export type TagType<T extends TagIdentifier = TagIdentifier> = T extends TagIden
   ? TagItemType
   : never; // TODO: add more types
 
-// See: https://minecraft.fandom.com/wiki/Tag
+// See: https://minecraft.wiki/w/Tag
 export class Tag<T extends TagType = TagType> {
   public readonly items: string[];
   public readonly type: T;
