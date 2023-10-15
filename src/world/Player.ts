@@ -217,10 +217,10 @@ export class Player extends Entity {
                     has_ceiling: false,
                     has_raids: true,
                     has_skylight: true,
-                    height: int(384),
+                    height: int(256),
                     infiniburn: "#minecraft:infiniburn_overworld",
-                    logical_height: int(384),
-                    min_y: int(-64),
+                    logical_height: int(256),
+                    min_y: int(0),
                     natural: true,
                     piglin_safe: false,
                     respawn_anchor_works: false,
@@ -264,7 +264,7 @@ export class Player extends Entity {
           dimension: {
             piglin_safe: false, // TODO: implicitly convert boolean to byte
             natural: true,
-            ambient_light: float(0.0),
+            ambient_light: float(1.0),
             infiniburn: "#minecraft:infiniburn_overworld",
             respawn_anchor_works: false,
             has_skylight: true,
@@ -281,11 +281,11 @@ export class Player extends Entity {
           worldName: "minecraft:overworld",
           hashedSeed: 1n,
           maxPlayers: 20, // TODO
-          viewDistance: 10,
-          simulationDistance: 10,
+          viewDistance: 32,
+          simulationDistance: 32,
           reducedDebugInfo: false,
           enableRespawnScreen: false,
-          isDebug: false,
+          isDebug: true,
           isFlat: false,
         });
         await this.connection.writeMessage(joinGameResponse);
@@ -308,7 +308,7 @@ export class Player extends Entity {
         // TODO: refactor to set position()
         await this.connection.writeMessage(
           new PlayClientboundPositionAndLookMessage({
-            position: new Vec5(0, 1, 0, 0, 0),
+            position: new Vec5(0, 500, 0, 0, 0),
             flags: {
               x: false,
               y: false,
@@ -316,8 +316,8 @@ export class Player extends Entity {
               y_rot: false,
               x_rot: false,
             },
-            teleportId: 69,
-            dismountVehicle: false,
+            teleportId: 1,
+            dismountVehicle: true,
           }),
         );
 

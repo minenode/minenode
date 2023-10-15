@@ -15,14 +15,20 @@ export interface BitArrayOptions {
   bitsPerValue: number;
 }
 
-export class BitArray {
+export interface BitArrayBase {
+  get(index: number): number;
+  set(index: number, value: number): void;
+}
+
+export class BitArray implements BitArrayBase {
   protected data: ReadWriteArrayLike<number>;
   protected valueMask: number;
-  protected capacity: number;
-  protected bitsPerValue: number;
+  public capacity: number;
+  public bitsPerValue: number;
 
   public constructor(options: BitArrayOptions) {
-    const data = options.data ?? new Uint32Array(Math.ceil((options.capacity * options.bitsPerValue) / 32));
+    const size = Math.ceil((options.capacity * options.bitsPerValue) / 32);
+    const data = options.data ?? new Uint32Array(size).fill(0);
     const valueMask = (1 << options.bitsPerValue) - 1;
 
     this.data = Uint32Array.from(data);
@@ -72,8 +78,20 @@ export class BitArray {
     return newArray;
   }
 
+  public resize(newCapacity: number): BitArray {
+    const newArr = new BitArray({
+      bitsPerValue: this.bitsPerValue,
+      capacity: newCapacity,
+    });
+    for (let i = 0; i < Math.min(newCapacity, this.capacity); ++i) {
+      newArr.set(i, this.get(i));
+    }
+
+    return newArr;
+  }
+
   public size(): number {
-    return this.data.length / 2;
+    return Math.ceil(this.data.length / 2);
   }
 
   public readBuffer(buffer: MineBuffer): this {
@@ -86,7 +104,8 @@ export class BitArray {
 
   public writeBuffer(buffer: MineBuffer): this {
     for (let i = 0; i < this.data.length; i += 2) {
-      buffer.writeUInt(this.data[i + 1]);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      buffer.writeUInt(this.data[i + 1] ?? 0);
       buffer.writeUInt(this.data[i]);
     }
     return this;
