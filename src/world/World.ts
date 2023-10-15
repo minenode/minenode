@@ -15,9 +15,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { writeFileSync } from "fs";
 import { Dimension } from "./Dimension";
 import { Player } from "./Player";
 import { Tickable } from "./Tickable";
+import { MineBuffer, Vec2, Vec3 } from "../../native";
+import { Chunk } from "../data/Chunk";
+import {
+  PlayClientboundChunkDataMessage,
+  PlayClientboundChunkDataMessageOptions,
+} from "../net/protocol/messages/play/clientbound/PlayClientboundChunkDataMessage";
 import Server from "../server/Server";
 import { Difficulty } from "../utils/Enums";
 import { parallel } from "../utils/SetUtils";
@@ -50,9 +57,59 @@ export class World implements Tickable {
 
   public constructor(server: Server, options: WorldOptions = {}) {
     this.server = server;
-    this._difficulty = options.difficulty ?? Difficulty.NORMAL;
+    this._difficulty = options.difficulty ?? Difficulty.PEACEFUL;
     this.difficultyLocked = options.difficultyLocked ?? false;
     this.isHardcore = options.isHardcore ?? false;
+
+    this.sendWolrd();
+  }
+
+  public sendWolrd() {
+    // Exemplo de criação de um Chunk com uma camada de terra (dirt)
+    const chunkLocation: Vec2 = new Vec2(0, 0);
+    // Dados de altura do Chunk (simplificado)
+    const heightMap = {
+      MOTION_BLOCKING: new Array(37).fill(BigInt(0n)), // Altura do bloco (simplificado)
+      WORLD_SURFACE: new Array(37).fill(BigInt(0n)), // Altura do bloco (simplificado)
+    };
+
+    const chunkData = new Chunk({});
+
+    for (let x = 0; x < 16; x++) {
+      for (let z = 0; z < 16; z++) {
+        for (let y = 0; y < 255; y++) {
+          chunkData.setBlockType(new Vec3(x, y, z), ((x + y) % 4) + 1);
+          chunkData.setBlockLight(new Vec3(x, y, z), 15);
+          // chunkData.setSkyLight(new Vec3(x, y, z), 15);
+        }
+      }
+    }
+
+    const trustEdges = true;
+    const skyLightMask = 0x0; // Para simplificação, não há dados de luz
+    const blockLightMask = 0x0; // Para simplificação, não há dados de luz
+    const emptySkyLightMask = 0x0; // Para simplificação, não há dados de luz
+    const emptyBlockLightMask = 0x0; // Para simplificação, não há dados de luz
+    const skyLight = new Uint8Array(2048).fill(0); // Para simplificação, todos os bits de luz são 1
+    const blockLight = new Uint8Array(2048).fill(0); // Para simplificação, todos os bits de luz são 1
+    const chunkDataPacket: PlayClientboundChunkDataMessageOptions = {
+      chunkLocation,
+      heightMap,
+      data: chunkData,
+      trustEdges,
+      skyLightMask,
+      blockLightMask,
+      emptySkyLightMask,
+      emptyBlockLightMask,
+      skyLight,
+      blockLight,
+    };
+    const pp = new PlayClientboundChunkDataMessage(chunkDataPacket);
+
+    const buffer = new MineBuffer();
+    pp.encode(buffer);
+    writeFileSync("testeChunk.data", buffer.getBuffer());
+    // await this.connection.writeMessage();
   }
 
   public init(): void {

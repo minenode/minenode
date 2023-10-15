@@ -197,12 +197,12 @@ export function getType<T extends Encodable>(value: T): NBTTagType {
     return NBTTagType.ByteArray;
   } else if (typeof value === "string") {
     return NBTTagType.String;
-  } else if (isArrayOf<Encodable>(value, isEncodable)) {
-    return NBTTagType.List;
-  } else if (value instanceof Int32Array || isArrayOf(value, Int)) {
-    return NBTTagType.IntArray;
   } else if (value instanceof BigInt64Array || isArrayOf<bigint>(value, "bigint")) {
     return NBTTagType.LongArray;
+  } else if (value instanceof Int32Array || isArrayOf(value, Int)) {
+    return NBTTagType.IntArray;
+  } else if (isArrayOf<Encodable>(value, isEncodable)) {
+    return NBTTagType.List;
   } else if (
     typeof value === "object" &&
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

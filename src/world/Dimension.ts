@@ -19,7 +19,7 @@ import * as uuidlib from "uuid";
 import { Player } from "./Player";
 import { Tickable } from "./Tickable";
 import { WithUniqueId } from "./WithUniqueId";
-import { World, WorldMember } from "./World";
+import { WorldMember, World } from "./World";
 import Server from "../server/Server";
 
 export class Dimension implements Tickable, WorldMember, WithUniqueId {
