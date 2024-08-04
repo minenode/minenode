@@ -35,6 +35,29 @@ impl Vec2 {
   pub fn zero() -> Vec2 {
     Vec2 { x: 0.0, y: 0.0 }
   }
+  
+  #[napi(factory)]
+  pub fn from_string(s: String) -> Self {
+    let s = s.trim();
+    if !s.starts_with("Vec2(") || !s.ends_with(")") {
+      // Retorna um valor padrão em caso de erro
+      return Vec2 { x: 0.0, y: 0.0 }; // Valor padrão, você pode ajustar conforme necessário
+    }
+
+    let content = &s[5..s.len() - 1];
+    let parts: Vec<&str> = content.split(',').collect();
+
+    if parts.len() != 2 {
+      // Retorna um valor padrão em caso de erro
+      return Vec2 { x: 0.0, y: 0.0 }; // Valor padrão, você pode ajustar conforme necessário
+    }
+
+    let x: f64 = parts[0].trim().parse().unwrap_or(0.0); // Valor padrão em caso de erro
+    let y: f64 = parts[1].trim().parse().unwrap_or(0.0); // Valor padrão em caso de erro
+
+    Vec2 { x, y }
+  }
+
 
   #[napi]
   pub fn magnitude(&self) -> f64 {

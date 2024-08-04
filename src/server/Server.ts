@@ -19,9 +19,7 @@ import crypto from "crypto";
 import fs from "fs";
 import net from "net";
 import path from "path";
-import util from "util";
 import { EventEmitter } from "eventemitter3";
-
 import Connection, { ConnectionState } from "./Connection";
 import MessageHandlerFactory from "../net/protocol/messages/MessageHandlerFactory";
 import { Chat, consoleFormatChat } from "../utils/Chat";
@@ -93,8 +91,6 @@ export default class Server extends EventEmitter<{
     // TODO: this is temporary
     const mainWorld = new World(this);
     this.worlds.add(mainWorld);
-    const mainWorldOverworld = new Dimension(mainWorld, "overworld");
-    mainWorld.dimensions.add(mainWorldOverworld);
 
     // Bind events
     this.tcpServer.on("connection", this._onSocketConnect.bind(this));
@@ -139,7 +135,7 @@ export default class Server extends EventEmitter<{
     }
   }
 
-  public start(): void {
+  public async start(): Promise<void> {
     // Display license message
     this.logger.info(`MineNode ${MINENODE_VERSION} - implementing MC ${GAME_VERSION} (${PROTOCOL_VERSION})`);
     this.logger.info(`Copyright (C) ${new Date().getFullYear()} MineNode. All rights reserved.`);
@@ -147,6 +143,9 @@ export default class Server extends EventEmitter<{
 
     this.loadServerIcon();
     this.generateKeyPair();
+
+    // TODO: init worlds - I don't know if you need to stay here
+    await parallel(this.worlds.values(), e => e.init());
 
     // TODO: load from config
     this.tcpServer.listen(25565, "0.0.0.0");
@@ -165,6 +164,7 @@ export default class Server extends EventEmitter<{
     }
 
     await parallel(this.players(), player => player.disconnect("Server is shutting down"));
+    await parallel(this.worlds, world => world.end());
 
     this.tcpServer.close();
     this.logger.info("server stopped");
@@ -178,9 +178,18 @@ export default class Server extends EventEmitter<{
     this.emit("tick", this.tickCount);
 
     await parallel(this.players(), player => player.tick(this.tickCount));
+    await parallel(this.worlds, world => world.tick(this.tickCount));
 
     if (this.tickCount % (20 * 50) === 0) {
       this.logger.debug(`tick ${this.tickCount}, TPS = ${((this.performance.average / 1_000_000) * (20 / 50)).toFixed(1)}`);
+
+      const memoryUsage = process.memoryUsage();
+      this.logger.debug(`RSS: ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`);
+      this.logger.debug(`Heap Total: ${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`);
+      this.logger.debug(`Heap Used: ${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`);
+      this.logger.debug(`External: ${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB`);
+      this.logger.debug(`Array Buffers: ${(memoryUsage.arrayBuffers / 1024 / 1024).toFixed(2)} MB`);
+      this.logger.debug("-----------------------------------");
     }
   }
 
@@ -202,38 +211,12 @@ export default class Server extends EventEmitter<{
 
     this.logger.debug(`${connection.remote}: connected`);
 
-    // TODO: this is temporary
+    // TODO: this is temporary - must get the world configured xml
     const dimension = first(this.dimensions())!;
 
     const player = new Player(dimension, ++Entity.RUNTIME_ID, connection);
     dimension.players.add(player);
 
-    // Bind connection events
-    // TODO: move this to Player class?
-    connection.on("disconnect", () => {
-      this.logger.debug(`${connection.remote}: disconnected`);
-      dimension.players.delete(player);
-      void player.end();
-    });
-
-    connection.on("message", msg => {
-      const handler = this.handlerFactory.getHandler(msg.packetID, connection.state);
-
-      if (handler) {
-        try {
-          handler.handle(msg.payload, player);
-        } catch (err) {
-          this.logger.error(util.inspect(err));
-          void connection.disconnect({ text: String(err), color: "red" });
-        }
-      } else {
-        // TODO handle
-        this.logger.error(
-          `${connection.remote}: invalid message (state = ${ConnectionState[connection.state]} [${connection.state}]), id = ${msg.packetID} / 0x${msg.packetID
-            .toString(16)
-            .padStart(2, "0")})`,
-        );
-      }
-    });
+    player.load();
   }
 }

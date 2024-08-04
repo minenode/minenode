@@ -65,3 +65,5 @@ export class LoginStartMessage extends MessageHandler {
     await player.connection.writeMessage(response);
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new LoginStartMessage(server);

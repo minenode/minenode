@@ -52,3 +52,5 @@ export class HandshakeMessageHandler extends MessageHandler {
     this.server.logger.debug(`${player.connection.remote}: handshake (server = ${serverIP}, protocol = ${protocolVersion}, nextState = ${nextState})`);
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new HandshakeMessageHandler(server);

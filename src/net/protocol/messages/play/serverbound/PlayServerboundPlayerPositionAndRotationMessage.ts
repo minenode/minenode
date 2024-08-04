@@ -79,3 +79,5 @@ export class PlayServerboundPlayerPositionAndRotationMessage extends MessageHand
     // // this.server.logger.debug(`${player.connection.remote}: player position and rotation ${pos} (onGround = ${onGround})`);
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundPlayerPositionAndRotationMessage(server);

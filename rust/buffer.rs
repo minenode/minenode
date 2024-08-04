@@ -361,12 +361,17 @@ impl MineBuffer {
   #[napi(js_name="readPosition")]
   pub fn read_position(&mut self) -> Result<Vec3> {
     let val = self.read_u64()?;
-    Ok(Vec3::new(
-      (val >> 38) as f64,
-      ((val >> 26) & 0xfff) as f64,
-      (val & 0x3ffffff) as f64
-    ))
-  }
+
+    let x = ((val >> 38) & 0x3FFFFFF) as i32;
+    let y = (val & 0xFFF) as i32;
+    let z = ((val >> 12) & 0x3FFFFFF) as i32;
+
+    let x = if x & 0x2000000 != 0 { x | !0x3FFFFFF } else { x };
+    let y = if y & 0x800 != 0 { y | !0xFFF } else { y };
+    let z = if z & 0x2000000 != 0 { z | !0x3FFFFFF } else { z };
+
+    Ok(Vec3::new(x as f64, y as f64, z as f64))
+}
 
   #[napi(js_name="readUUID")]
   pub fn read_uuid(&mut self) -> Result<String> {
@@ -446,7 +451,7 @@ impl MineBuffer {
     let x = val.x as i64;
     let y = val.y as i64;
     let z = val.z as i64;
-    let val = ((x & 0x3ffffff) << 38) | ((y & 0xfff) << 26) | (z & 0x3ffffff);
+    let val = ((x & 0x3FFFFFF) << 38) | ((z & 0x3FFFFFF) << 12) | (y & 0xFFF);
     self.write(&val.to_be_bytes());
   }
 

@@ -48,3 +48,5 @@ export class PlayServerboundPluginMessage extends MessageHandler {
     }
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundPluginMessage(server);

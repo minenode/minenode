@@ -57,3 +57,5 @@ export class StatusRequestMessageHandler extends MessageHandler {
     this.server.logger.debug(`${player.connection.remote}: status request`);
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new StatusRequestMessageHandler(server);

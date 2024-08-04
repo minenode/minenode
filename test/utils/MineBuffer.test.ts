@@ -18,6 +18,7 @@
 import * as uuid from "uuid";
 
 import { MineBuffer } from "../../native";
+import { Vec3 } from "../../native/index";
 
 const buffer = new MineBuffer();
 
@@ -137,18 +138,17 @@ test("read/write ushort", () => {
 });
 buffer.reset();
 
-// test("read/write position", () => {
-//   for (let x = -5; x < 5; x++) {
-//     for (let y = -5; y < 5; y++) {
-//       for (let z = -5; z < 5; z++) {
-//         const pos = { x, y, z };
-//         buffer.writePosition(pos);
-//         expect(buffer.readPosition()).toMatchObject(pos);
-//       }
-//     }
-//   }
-// });
-// buffer.reset();
+test("read/write position", () => {
+  for (let x = -5; x < 5; x++) {
+    for (let y = -5; y < 5; y++) {
+      for (let z = -5; z < 5; z++) {
+        buffer.writePosition(new Vec3(x, y, z));
+        expect(buffer.readPosition().toString()).toMatch(new Vec3(x, y, z).toString());
+      }
+    }
+  }
+});
+buffer.reset();
 // TODO: fix this test
 
 test("read/write UUID", () => {

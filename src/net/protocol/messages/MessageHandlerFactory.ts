@@ -15,20 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { HandshakeMessageHandler } from "./handshake/serverbound/HandshakeMessage";
-import { LoginEncryptionResponseMessage } from "./login/serverbound/LoginEncryptionResponseMessage";
-import { LoginStartMessage } from "./login/serverbound/LoginStartMessage";
-import { PlayServerboundChatMessage } from "./play/serverbound/PlayServerboundChatMessage";
-import { PlayServerboundClientSettingsMessage } from "./play/serverbound/PlayServerboundClientSettingsMessage";
-import { PlayServerboundHeldItemChangeMessage } from "./play/serverbound/PlayServerboundHeldItemChangeMessage";
-import { PlayServerboundKeepAliveMessage } from "./play/serverbound/PlayServerboundKeepAliveMessage";
-import { PlayServerboundPlayerPositionAndRotationMessage } from "./play/serverbound/PlayServerboundPlayerPositionAndRotationMessage";
-import { PlayServerboundPlayerPositionMessage } from "./play/serverbound/PlayServerboundPlayerPositionMessage";
-import { PlayServerboundPlayerRotationMessage } from "./play/serverbound/PlayServerboundPlayerRotationMessage";
-import { PlayServerboundPluginMessage } from "./play/serverbound/PlayServerboundPluginMessage";
-import { PlayServerboundTeleportConfirmMessage } from "./play/serverbound/PlayServerboundTeleportConfirmMessage";
-import { StatusPingMessageHandler } from "./status/serverbound/StatusPingMessage";
-import { StatusRequestMessageHandler } from "./status/serverbound/StatusRequestMessage";
+import path from "path";
+import { globSync } from "glob";
 import { ConnectionState } from "../../../server/Connection";
 import Server from "../../../server/Server";
 import { MessageHandler } from "../Message";
@@ -37,21 +25,17 @@ export default class MessageHandlerFactory {
   public readonly registered: Set<MessageHandler> = new Set();
 
   public constructor(public readonly server: Server) {
-    this.registered
-      .add(new HandshakeMessageHandler(this.server))
-      .add(new LoginEncryptionResponseMessage(this.server))
-      .add(new LoginStartMessage(this.server))
-      .add(new PlayServerboundChatMessage(this.server))
-      .add(new PlayServerboundClientSettingsMessage(this.server))
-      .add(new PlayServerboundHeldItemChangeMessage(this.server))
-      .add(new PlayServerboundKeepAliveMessage(this.server))
-      .add(new PlayServerboundPlayerPositionAndRotationMessage(this.server))
-      .add(new PlayServerboundPlayerPositionMessage(this.server))
-      .add(new PlayServerboundPlayerRotationMessage(this.server))
-      .add(new PlayServerboundPluginMessage(this.server))
-      .add(new PlayServerboundTeleportConfirmMessage(this.server))
-      .add(new StatusPingMessageHandler(this.server))
-      .add(new StatusRequestMessageHandler(this.server));
+    const messagesFiles = globSync("src/net/protocol/messages/**/*.ts", {
+      ignore: ["./MessageHandlerFactory.ts"],
+    });
+
+    const messagesModules = messagesFiles
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+      .map(file => require(path.resolve(file))?.selfRegisterMessageHandler as ((server: Server) => MessageHandler) | undefined);
+
+    messagesModules.forEach(moduleHandles => {
+      if (moduleHandles) this.registered.add(moduleHandles(this.server));
+    });
   }
 
   public getHandler(id: number, state: ConnectionState): MessageHandler | null {

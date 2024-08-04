@@ -18,6 +18,8 @@
 import { Dimension } from "./Dimension";
 import { Player } from "./Player";
 import { Tickable } from "./Tickable";
+import { FSWorldStorageProvider } from "../StorageProviders/FSWorldStorage";
+import { WorldStorageProvider } from "../data/WorldStorageProvider";
 import Server from "../server/Server";
 import { Difficulty } from "../utils/Enums";
 import { parallel } from "../utils/SetUtils";
@@ -26,6 +28,9 @@ export interface WorldOptions {
   difficulty?: Difficulty;
   difficultyLocked?: boolean;
   isHardcore?: boolean;
+  name: string;
+  worldStorageProvider?: WorldStorageProvider;
+  savingInterval?: number;
 }
 
 export class World implements Tickable {
@@ -35,6 +40,10 @@ export class World implements Tickable {
   private _difficulty: Difficulty;
   public readonly difficultyLocked: boolean;
   public readonly isHardcore: boolean;
+  public readonly name: string;
+
+  public readonly worldStorageProvider: WorldStorageProvider;
+  public readonly savingInterval: number;
 
   public get difficulty(): Difficulty {
     return this._difficulty;
@@ -48,22 +57,47 @@ export class World implements Tickable {
     void parallel(this.players(), player => player.sendDifficulty(difficulty));
   }
 
-  public constructor(server: Server, options: WorldOptions = {}) {
+  public constructor(
+    server: Server,
+    options: WorldOptions = {
+      name: "World",
+    },
+  ) {
     this.server = server;
-    this._difficulty = options.difficulty ?? Difficulty.NORMAL;
+    this._difficulty = options.difficulty ?? Difficulty.PEACEFUL;
     this.difficultyLocked = options.difficultyLocked ?? false;
     this.isHardcore = options.isHardcore ?? false;
+    this.savingInterval = options.savingInterval ?? 10000;
+    if (options.worldStorageProvider instanceof FSWorldStorageProvider) {
+      this.worldStorageProvider = options.worldStorageProvider;
+    } else {
+      this.worldStorageProvider = new FSWorldStorageProvider({
+        path: "worldData",
+      });
+    }
+    this.name = options.name;
   }
 
-  public init(): void {
-    void 0;
+  public async init(): Promise<void> {
+    const dismensions = await this.worldStorageProvider.loadDimensions(this);
+    if (dismensions.length > 0) {
+      dismensions.forEach(e => this.dimensions.add(e));
+    } else {
+      // TODO: temporary
+      const mainWorldOverworld = new Dimension(this, { name: "overworld" });
+      this.dimensions.add(mainWorldOverworld);
+    }
   }
 
-  public end(): void {
-    void 0;
+  public async end(): Promise<void> {
+    this.server.logger.info(`Ending world ${this.name}`);
+    await parallel(this.dimensions, dimension => dimension.end());
   }
 
   public async tick(tick: number): Promise<void> {
+    for (const dimension of this.dimensions) {
+      await dimension.tick(tick);
+    }
     await Promise.resolve(void tick);
   }
 

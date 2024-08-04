@@ -56,6 +56,7 @@ export class Vec2 {
   y: number
   constructor(x: number, y: number)
   static zero(): Vec2
+  static fromString(s: string): Vec2
   magnitude(): number
   angle(): number
   toString(): string

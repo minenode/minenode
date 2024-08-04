@@ -39,3 +39,5 @@ export class PlayServerboundTeleportConfirmMessage extends MessageHandler {
     void teleportId, player;
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundTeleportConfirmMessage(server);

@@ -51,4 +51,4 @@ assert(
 
 const server = new Server(config);
 
-server.start();
+void server.start();

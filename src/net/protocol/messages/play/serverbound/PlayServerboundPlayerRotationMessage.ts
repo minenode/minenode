@@ -42,3 +42,5 @@ export class PlayServerboundPlayerRotationMessage extends MessageHandler {
     await player.setPositionChecked(newPos, onGround);
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundPlayerRotationMessage(server);

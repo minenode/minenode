@@ -133,7 +133,11 @@ export default class Connection extends EventEmitter<{
     }
 
     return new Promise((resolve, reject) => {
-      this.socket.write(finalBuffer, err => (err ? reject(err) : resolve()));
+      try {
+        this.socket.write(finalBuffer, err => (err ? reject(err) : resolve()));
+      } catch (error) {
+        this.server.logger.error(`${this.remote}: ${inspect(error)}`);
+      }
     });
   }
 

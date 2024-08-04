@@ -40,3 +40,5 @@ export class PlayServerboundHeldItemChangeMessage extends MessageHandler {
     if (slot !== player.hotbarSlot) player.hotbarSlot = slot;
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundHeldItemChangeMessage(server);

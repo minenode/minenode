@@ -38,3 +38,5 @@ export class PlayServerboundKeepAliveMessage extends MessageHandler {
     // TODO: time-out detection
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundKeepAliveMessage(server);

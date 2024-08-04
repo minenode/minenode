@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import * as crypto from "crypto";
+import NodeRSA from "node-rsa";
 
 import { MineBuffer } from "../../../../../../native/index";
 import { MessageHandler } from "../../../../../net/protocol/Message";
@@ -43,8 +43,18 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
 
     // Verify verifyToken
 
-    const decryptedSharedSecret = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, sharedSecret);
-    const decryptedVerifyToken = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, verifyToken);
+    // const decryptedSharedSecret = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, sharedSecret);
+    // const decryptedVerifyToken = crypto.privateDecrypt({ key: this.server.keypair.privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }, verifyToken);
+
+    const keyRSA = new NodeRSA(this.server.keypair.privateKey.export({ format: "pem", type: "pkcs1" }), "private", {
+      encryptionScheme: "pkcs1",
+    });
+
+    // By default it will use the node crypto library with the CVE
+    keyRSA.setOptions({ environment: "browser" });
+
+    const decryptedSharedSecret = keyRSA.decrypt(sharedSecret, "buffer");
+    const decryptedVerifyToken = keyRSA.decrypt(verifyToken, "buffer");
 
     if (!decryptedVerifyToken.equals(player.connection.encryption.verifyToken)) {
       // Invalid
@@ -85,3 +95,5 @@ export class LoginEncryptionResponseMessage extends MessageHandler {
     // TODO: Move this all out of this class
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new LoginEncryptionResponseMessage(server);

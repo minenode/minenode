@@ -74,3 +74,5 @@ export class PlayServerboundPlayerPositionMessage extends MessageHandler {
     // // this.server.logger.debug(`${player.connection.remote}: player position (x = ${x}, y = ${y}, z = ${z}, onGround = ${onGround})`);
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundPlayerPositionMessage(server);

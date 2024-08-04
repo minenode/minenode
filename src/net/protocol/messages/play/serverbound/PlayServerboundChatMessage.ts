@@ -147,3 +147,5 @@ export class PlayServerboundChatMessage extends MessageHandler {
     );
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundChatMessage(server);

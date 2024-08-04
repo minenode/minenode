@@ -41,3 +41,5 @@ export class StatusPingMessageHandler extends MessageHandler {
     this.server.logger.debug(`${player.connection.remote}: status ping (payload = ${payload})`);
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new StatusPingMessageHandler(server);

@@ -47,3 +47,5 @@ export class PlayServerboundClientSettingsMessage extends MessageHandler {
     void player;
   }
 }
+
+export const selfRegisterMessageHandler = (server: Server) => new PlayServerboundClientSettingsMessage(server);

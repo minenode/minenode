@@ -14,6 +14,7 @@
     "@types/long": "^4.0.2",
     "@types/node": "^18.0.3",
     "@types/node-7z": "^2.1.4",
+    "@types/node-rsa": "^1.1.4",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.30.6",
     "@typescript-eslint/parser": "^5.30.6",
@@ -34,13 +35,16 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "7zip-bin": "^5.2.0",
     "@swc-node/register": "^1.5.1",
+    "7zip-bin": "^5.2.0",
     "chalk": "4",
     "eventemitter3": "^4.0.7",
+    "glob": "^11.0.0",
     "js-yaml": "^4.1.0",
+    "minecraft-data": "^3.46.2",
     "nbt": "^0.8.1",
     "node-7z": "^3.0.0",
+    "node-rsa": "^1.1.1",
     "superstruct": "^0.16.0",
     "uuid": "^8.3.2"
   },

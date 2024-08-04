@@ -15,9 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import util from "util";
 import { Dimension } from "./Dimension";
 import { Entity } from "./Entity";
 import { Vec3, Vec5 } from "../../native";
+import codecDef from "../assets/codec";
 import { int, float, double } from "../data/NBT";
 import { PlayClientboundChatMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundChatMessage";
 import { PlayClientboundEntityStatusMessage } from "../net/protocol/messages/play/clientbound/PlayClientboundEntityStatusMessage";
@@ -50,13 +52,13 @@ export class Player extends Entity {
   private _username: string | null = null;
 
   public get username(): string {
-    if (this._username === null) throw new Error("Player.username is not set");
-    return this._username;
+    // if (this._username === null) throw new Error("Player.username is not set");
+    return this._username ?? "unknown";
   }
 
-  public set username(username: string) {
-    if (!/^[a-zA-Z0-9_]{2,16}$/.test(username)) throw new Error(`Invalid username ${username}`);
-    this._username = username;
+  public set username(usernameInput: string) {
+    if (!/^[a-zA-Z0-9_]{2,16}$/.test(usernameInput)) throw new Error(`Invalid username ${usernameInput}`);
+    this._username = usernameInput;
   }
 
   private _hotbarSlot: InventoryHotbarSlot = InventoryHotbarSlot.SLOT_1;
@@ -67,6 +69,35 @@ export class Player extends Entity {
 
   public set hotbarSlot(slot: InventoryHotbarSlot) {
     void this.setHotbarSlotAsync(slot);
+  }
+
+  public load() {
+    // Bind connection events
+    this.connection.on("disconnect", () => {
+      this.server.logger.debug(`${this.connection.remote}: disconnected`);
+      this.dimension.players.delete(this);
+      void this.end();
+    });
+
+    this.connection.on("message", msg => {
+      const handler = this.server.handlerFactory.getHandler(msg.packetID, this.connection.state);
+
+      if (handler) {
+        try {
+          handler.handle(msg.payload, this);
+        } catch (err) {
+          this.server.logger.error(util.inspect(err));
+          void this.connection.disconnect({ text: String(err), color: "red" });
+        }
+      } else {
+        // TODO handle
+        this.server.logger.error(
+          `${this.connection.remote}: invalid message (state = ${ConnectionState[this.connection.state]} [${this.connection.state}]), id = ${
+            msg.packetID
+          } / 0x${msg.packetID.toString(16).padStart(2, "0")})`,
+        );
+      }
+    });
   }
 
   public async setHotbarSlotAsync(slot: InventoryHotbarSlot): Promise<void> {
@@ -101,6 +132,10 @@ export class Player extends Entity {
     return 1.4 / 20;
   }
 
+  // TODO: implement this method
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+  public sendChunks(_chunkX: number, _chunkZ: number) {}
+
   public async setPositionChecked(position: Vec5, onGround: boolean): Promise<void> {
     // const distance = this._position.distance(position);
     // if (distance > this.maxDistancePerTick)
@@ -111,6 +146,10 @@ export class Player extends Entity {
   public async setPositionUnchecked(position: Vec5, onGround: boolean): Promise<void> {
     if (this.connection.state !== ConnectionState.PLAY)
       throw new Error(`Player.setPositionUnchecked can only be called in PLAY state, but is called in ${ConnectionState[this.connection.state]}`);
+    if (this._position.toVec3().x !== position.toVec3().x || this._position.toVec3().z !== position.toVec3().z) {
+      await this.dimension.updatePlayerPosition(this, position);
+    }
+
     this._position = position;
     this._isOnGround = onGround;
     this._lastPositionOnGround = onGround ? position : null;
@@ -143,9 +182,6 @@ export class Player extends Entity {
       if (this._isOnGround) {
         this._lastTickOnGround = tick;
         this._lastPositionOnGround = this._position.toVec3();
-      }
-      if (tick - this._lastTickOnGround > 20 * 10) {
-        // await this.disconnect("Player is not on ground");
       }
     }
   }
@@ -204,85 +240,29 @@ export class Player extends Entity {
           gamemode: GameMode.CREATIVE, // TODO
           previousGameMode: GameMode.NONE,
           worlds: ["minecraft:overworld"],
-          dimensionCodec: {
-            "minecraft:dimension_type": {
-              type: "minecraft:dimension_type",
-              value: [
-                {
-                  element: {
-                    ambient_light: float(0.0),
-                    bed_works: true,
-                    coordinate_scale: double(1.0),
-                    effects: "minecraft:overworld",
-                    has_ceiling: false,
-                    has_raids: true,
-                    has_skylight: true,
-                    height: int(384),
-                    infiniburn: "#minecraft:infiniburn_overworld",
-                    logical_height: int(384),
-                    min_y: int(-64),
-                    natural: true,
-                    piglin_safe: false,
-                    respawn_anchor_works: false,
-                    ultrawarm: false,
-                  },
-                  id: int(0),
-                  name: "minecraft:overworld",
-                },
-              ],
-            },
-            "minecraft:worldgen/biome": {
-              type: "minecraft:worldgen/biome",
-              value: [
-                {
-                  element: {
-                    category: "plains",
-                    downfall: float(0.4),
-                    effects: {
-                      sky_color: int(7907327),
-                      water_fog_color: int(329011),
-                      fog_color: int(12638463),
-                      water_color: int(4159204),
-                      mood_sound: {
-                        tick_delay: int(6000),
-                        offset: double(2.0),
-                        sound: "minecraft:ambient.cave",
-                        block_search_extent: int(8),
-                      },
-                    },
-                    depth: float(0.125),
-                    precipitation: "rain",
-                    temperature: float(0.8),
-                    scale: float(0.05),
-                  },
-                  id: int(1),
-                  name: "minecraft:plains",
-                },
-              ],
-            },
-          },
+          dimensionCodec: codecDef,
           dimension: {
-            piglin_safe: false, // TODO: implicitly convert boolean to byte
-            natural: true,
-            ambient_light: float(0.0),
             infiniburn: "#minecraft:infiniburn_overworld",
-            respawn_anchor_works: false,
-            has_skylight: true,
-            bed_works: true,
             effects: "minecraft:overworld",
-            has_raids: true,
-            min_y: int(0),
-            height: int(256),
-            logical_height: int(256),
-            coordinate_scale: double(1.0),
             ultrawarm: false,
+            logical_height: int(384),
+            height: int(384),
+            natural: true,
+            min_y: int(-64),
+            bed_works: true,
+            coordinate_scale: double(1),
+            piglin_safe: false,
+            has_skylight: true,
             has_ceiling: false,
+            ambient_light: float(0),
+            has_raids: true,
+            respawn_anchor_works: false,
           },
           worldName: "minecraft:overworld",
           hashedSeed: 1n,
           maxPlayers: 20, // TODO
-          viewDistance: 10,
-          simulationDistance: 10,
+          viewDistance: 32,
+          simulationDistance: 32,
           reducedDebugInfo: false,
           enableRespawnScreen: false,
           isDebug: false,
@@ -302,13 +282,13 @@ export class Player extends Entity {
         await this.connection.writeMessage(
           new PlayClientboundEntityStatusMessage({
             entityId: this.entityId,
-            status: AllEntityStatus.PLAYER__SET_OP_PERMISSION_4, // TODO: read from config, validate, etc.
+            status: AllEntityStatus.PLAYER__SET_OP_PERMISSION_1, // TODO: read from config, validate, etc.
           }),
         );
         // TODO: refactor to set position()
         await this.connection.writeMessage(
           new PlayClientboundPositionAndLookMessage({
-            position: new Vec5(0, 1, 0, 0, 0),
+            position: new Vec5(0, 270, 0, 0, 0),
             flags: {
               x: false,
               y: false,
@@ -316,8 +296,8 @@ export class Player extends Entity {
               y_rot: false,
               x_rot: false,
             },
-            teleportId: 69,
-            dismountVehicle: false,
+            teleportId: 1,
+            dismountVehicle: true,
           }),
         );
 
@@ -328,6 +308,8 @@ export class Player extends Entity {
           },
           ClientChatPosition.SYSTEM_MESSAGE,
         );
+
+        await this.dimension.updatePlayerPosition(this, new Vec5(0, 270, 0, 0, 0));
 
         break;
       }
